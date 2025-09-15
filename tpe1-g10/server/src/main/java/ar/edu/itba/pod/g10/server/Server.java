@@ -14,6 +14,7 @@ public class Server {
 
         int port = 50051;
         io.grpc.Server server = ServerBuilder.forPort(port)
+                .addService(new DockServant())
                 .build();
         server.start();
         logger.info("Server started, listening on " + port);

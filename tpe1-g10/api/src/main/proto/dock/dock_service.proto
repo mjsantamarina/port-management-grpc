@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+import "utils/utils_type.proto";
+
+package dock;
+
+option java_package = "ar.edu.itba.pod.grpc.dock";
+option java_outer_classname = "DockServiceModel";
+option java_multiple_files = true;
+
+service DockService {
+  rpc AddDock(AddDockRequest) returns (google.protobuf.UInt32Value);
+  rpc AddCraneToDock(AddCraneToDockRequest) returns (DockStatusResponse);
+  rpc ToggleDockStatus(google.protobuf.UInt32Value) returns (DockStatusResponse);
+}
+
+message AddDockRequest {
+  utils.Size dock_size = 1;
+}
+
+message AddCraneToDockRequest {
+  uint32 dock_number = 1;
+  uint32 container_ammount = 2;
+}
+
+message DockStatusResponse {
+  utils.DockStatus dock_status = 1;
+  uint32 dock_number = 2;
+  utils.Size dock_size = 3;
+}
+

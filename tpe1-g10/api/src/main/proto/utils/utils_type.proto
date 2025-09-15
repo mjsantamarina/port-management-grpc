@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+
+package utils;
+
+option java_package = "ar.edu.itba.pod.grpc.utils";
+option java_outer_classname = "UtilsTypeModel";
+option java_multiple_files = true;
+
+enum Size {
+  SIZE_UNSPECIFIED = 0;
+  SIZE_SMALL = 1;
+  SIZE_MEDIUM = 2;
+  SIZE_LARGE = 3;
+}
+
+enum DockStatus {
+  DOCK_STATUS_UNSPECIFIED = 0;
+  DOCK_STATUS_CLOSED = 1;
+  DOCK_STATUS_IDLE = 2;
+  DOCK_STATUS_BUSY = 3;
+}
+
