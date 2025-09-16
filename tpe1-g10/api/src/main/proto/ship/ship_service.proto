@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+import "utils/utils_type.proto";
+import "dock/dock_service.proto";
+
+
+package ship;
+
+option java_package = "ar.edu.itba.pod.grpc.ship";
+option java_outer_classname = "ShipServiceModel";
+option java_multiple_files = true;
+
+
+service ShipService {
+  rpc requestDock(DockRequest) returns (stream DockResponse);
+  rpc getDockStatus(google.protobuf.UInt32Value) returns (dock.DockStatusResponse);
+  rpc leaveDock(LeaveDockRequest) returns (LeaveDockResponse);
+}
+
+message DockRequest {
+  string ship_id = 1;
+  utils.Size ship_size = 2;
+  string ship_containers = 3;
+}
+
+message DockResponse {
+  uint32 dock_number = 1;
+  utils.Size dock_size = 2;
+  string ship_id = 3;
+  utils.Size ship_size = 4;
+  uint32 ships_ahead = 5;
+  utils.DockEventType event_type = 6;
+}
+
+message LeaveDockRequest {
+  uint32 dock_number = 1;
+  string ship_id = 2;
+}
+
+message LeaveDockResponse {
+  uint32 dock_number = 1;
+  utils.Size dock_size = 2;
+  string ship_id = 3;
+  utils.Size ship_size = 4;
+  string ship_containers = 5;
+}

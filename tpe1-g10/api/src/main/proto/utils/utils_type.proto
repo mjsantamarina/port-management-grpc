@@ -23,3 +23,10 @@ enum DockStatus {
   DOCK_STATUS_BUSY = 3;
 }
 
+
+enum DockEventType {
+  DOCK_EVENT_UNSPECIFIED = 0;
+  WAITING = 1;
+  QUEUE_UPDATE = 2;
+  ASSIGNED = 3;
+}

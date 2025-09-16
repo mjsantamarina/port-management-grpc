@@ -1,5 +1,6 @@
 package ar.edu.itba.pod.g10.server.repositories;
 
+import ar.edu.itba.pod.g10.server.locks.Locks;
 import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.grpc.dock.AddDockRequest;
 import ar.edu.itba.pod.grpc.utils.DockStatus;
@@ -54,5 +55,46 @@ public class DockRespository {
         return docksBySize.values().stream().flatMap(Collection::stream)
                 .filter(dock -> dock.getNumber() == dockNumber).findFirst();
     }
+
+    public boolean hasAvailableDock(Size shipSize) {
+        Locks.DOCK_LOCK.lock();
+        try {
+            return findAvailableDock(shipSize).isPresent();
+        } finally {
+            Locks.DOCK_LOCK.unlock();
+        }
+    }
+
+    public Dock assignDock(Size shipSize) {
+        Locks.DOCK_LOCK.lock();
+        try {
+            Dock d = findAvailableDock(shipSize).orElseThrow(() -> new IllegalStateException("No available dock"));
+            d.setStatus(DockStatus.DOCK_STATUS_BUSY);
+            return d;
+        } finally {
+            Locks.DOCK_LOCK.unlock();
+        }
+    }
+
+    private Optional<Dock> findAvailableDock(Size shipSize) {
+        return sizesOrderFor(shipSize)
+                .stream()
+                .flatMap(sz -> {
+                    Deque<Dock> dq = docksBySize.get(sz);
+                    return dq == null ? Stream.empty() : dq.stream();
+                })
+                .filter(d -> d.getStatus() == DockStatus.DOCK_STATUS_IDLE)
+                .min((a, b) -> Integer.compare(a.getNumber(), b.getNumber()));
+    }
+
+    private java.util.List<Size> sizesOrderFor(Size shipSize) {
+        return switch (shipSize) {
+            case SIZE_SMALL -> java.util.List.of(Size.SIZE_SMALL, Size.SIZE_MEDIUM, Size.SIZE_LARGE);
+            case SIZE_MEDIUM -> java.util.List.of(Size.SIZE_MEDIUM, Size.SIZE_LARGE);
+            case SIZE_LARGE -> java.util.List.of(Size.SIZE_LARGE);
+            default -> java.util.List.of();
+        };
+    }
+
 
 }

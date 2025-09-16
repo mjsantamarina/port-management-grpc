@@ -1,5 +1,9 @@
 package ar.edu.itba.pod.g10.server;
 
+import ar.edu.itba.pod.g10.server.repositories.DockRespository;
+import ar.edu.itba.pod.g10.server.repositories.ShipRepository;
+import ar.edu.itba.pod.g10.server.servants.DockServant;
+import ar.edu.itba.pod.g10.server.servants.ShipServant;
 import io.grpc.ServerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,9 +16,13 @@ public class Server {
     public static void main(String[] args) throws InterruptedException, IOException {
         logger.info(" Server Starting ...");
 
+        DockRespository dockRespository = new DockRespository();
+        ShipRepository shipRepository = new ShipRepository();
+
         int port = 50051;
         io.grpc.Server server = ServerBuilder.forPort(port)
-                .addService(new DockServant())
+                .addService(new DockServant(dockRespository))
+                .addService(new ShipServant(dockRespository, shipRepository))
                 .build();
         server.start();
         logger.info("Server started, listening on " + port);

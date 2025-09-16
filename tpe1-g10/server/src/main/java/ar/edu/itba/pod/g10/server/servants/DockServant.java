@@ -28,7 +28,19 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
     public void toggleDockStatus(UInt32Value request, StreamObserver<DockStatusResponse> responseObserver){
         Dock dock;
         try {
-            dock = dockRespository.
+            dock = dockRespository.toggleDock(request.getValue());
+        } catch (Exception e) {
+            responseObserver.onError(
+                    io.grpc.Status.PERMISSION_DENIED
+                            .withDescription(e.getMessage())
+                            .asRuntimeException()
+            );
+            return;
         }
+        DockStatusResponse dockStatusResponse = DockStatusResponse.newBuilder()
+                .setDockNumber(dock.getNumber())
+                .setDockSize(dock.getSize())
+                .setDockStatus(dock.getStatus())
+                .build();
     }
 }
