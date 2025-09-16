@@ -8,7 +8,7 @@ public class Dock {
     private final int number;
     private final Size size;
     private DockStatus status;
-    //private Ship ship;
+    private Ship ship;
 
     public Dock(final int number, final Size size, final DockStatus status) {
         this.number = number;
@@ -16,6 +16,12 @@ public class Dock {
         this.status = status;
     }
 
+    public Ship getShip() {
+        return ship;
+    }
+    public void setShip(final Ship ship) {
+        this.ship = ship;
+    }
     public int getNumber() {
         return number;
     }

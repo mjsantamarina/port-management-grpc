@@ -3,19 +3,31 @@ package ar.edu.itba.pod.g10.server.repositories;
 import ar.edu.itba.pod.g10.server.models.Ship;
 
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentMap;
 
 public class ShipRepository {
     private int shipCount;
     private final Deque<Ship> shipQueue;
+    private final ConcurrentMap<String, Ship> shipMap;
+
 
     public ShipRepository() {
         this.shipQueue = new ConcurrentLinkedDeque<>();
+        this.shipMap = new ConcurrentHashMap<>();
     }
 
     public void addShip(Ship ship) {
+        shipMap.put(ship.getId(), ship);
         shipQueue.addLast(ship);
         shipCount++;
+    }
+
+
+    public Ship getShip(String id) {
+        return shipMap.get(id);
     }
 
     public Deque<Ship> getShipQueue() {

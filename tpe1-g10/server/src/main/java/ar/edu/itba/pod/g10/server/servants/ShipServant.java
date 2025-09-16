@@ -5,17 +5,17 @@ import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.g10.server.models.Ship;
 import ar.edu.itba.pod.g10.server.repositories.DockRespository;
 import ar.edu.itba.pod.g10.server.repositories.ShipRepository;
-import ar.edu.itba.pod.grpc.ship.DockRequest;
-import ar.edu.itba.pod.grpc.ship.DockResponse;
-import ar.edu.itba.pod.grpc.ship.ShipServiceGrpc;
+import ar.edu.itba.pod.grpc.dock.DockStatusResponse;
+import ar.edu.itba.pod.grpc.ship.*;
 import ar.edu.itba.pod.grpc.utils.DockEventType;
 import ar.edu.itba.pod.grpc.utils.Size;
+import com.google.protobuf.UInt32Value;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 
-import java.util.List;
+import java.util.Deque;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
 
@@ -28,38 +28,6 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
         this.dockRespository = dockRespository;
     }
 
-//    @Override
-//    public void requestDock(DockRequest request, StreamObserver<DockResponse> responseObserver) {
-//        DockResponse dockResponse;
-//        try {
-//            Ship myShip = new Ship(request.getShipId(), request.getShipSize(), countContainers(request.getShipContainers()));
-//            shipRepository.addShip(myShip);
-//            myShip.setPositionInQueue(shipRepository.getShipCount());
-//
-//            //si estoy primero en la cola y hay un dock disponible de mi tamaño, me asigno el dock y salgo de la cola
-//            while (true) {
-//
-//            }
-//
-//
-//
-//
-//
-//            while( shipRepository.getShipQueue().peekFirst() != myShip || !dockRespository.isThereAvailableDock(myShip.getSize()) ) {
-//                // busy wait
-//
-//            }
-//
-//
-//        } catch (Exception e) {
-//            responseObserver.onError(
-//                    io.grpc.Status.PERMISSION_DENIED
-//                            .withDescription(e.getMessage())
-//                            .asRuntimeException()
-//            );
-//            return;
-//        }
-//    }
 
     private static int countContainers(String input) {
         if (input == null || input.isEmpty()) {
@@ -68,7 +36,23 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
         return input.split("#").length;
     }
 
-
+    @Override
+    public void getDockStatus(UInt32Value request, StreamObserver<DockStatusResponse> responseObserver) {
+        DockStatusResponse.Builder responseBuilder = DockStatusResponse.newBuilder();
+        try {
+            Dock dock = dockRespository.getDockByNumber(request.getValue())
+                    .orElseThrow(() -> new IllegalArgumentException("Dock not found: " + request.getValue()));
+            responseBuilder.setDockNumber(dock.getNumber())
+                    .setDockSize(dock.getSize())
+                    .setDockStatus(dock.getStatus());
+            responseObserver.onNext(responseBuilder.build());
+            responseObserver.onCompleted();
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+        }
+    }
 
     @Override
     public void requestDock(DockRequest request, StreamObserver<DockResponse> responseObserver) {
@@ -103,7 +87,7 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
                     dockLock.lock();
                     try {
                         if (dockRespository.hasAvailableDock(ship.getSize())) {
-                            Dock dock = dockRespository.assignDock(ship.getSize());
+                            Dock dock = dockRespository.assignDock(ship);
                             shipRepository.getShipQueue().pollFirst();
                             responseObserver.onNext(DockResponse.newBuilder()
                                     .setShipId(ship.getId())
@@ -138,15 +122,51 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            responseObserver.onError(io.grpc.Status.CANCELLED.withDescription("interrupted").asRuntimeException());
+            responseObserver.onError(Status.CANCELLED.withDescription("interrupted").asRuntimeException());
         } catch (Exception e) {
-            responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
         } finally {
             repoLock.unlock();
         }
     }
 
-    private static int shipsAhead(java.util.Deque<Ship> q, Ship s) {
+
+    @Override
+    public void leaveDock(LeaveDockRequest request, StreamObserver<LeaveDockResponse> responseObserver) {
+        final java.util.concurrent.locks.ReentrantLock repoLock = Locks.SHIP_REPOSITORY_LOCK;
+        final java.util.concurrent.locks.ReentrantLock dockLock = Locks.DOCK_LOCK;
+
+        repoLock.lock();
+        try {
+
+            Dock dock = dockRespository.getDockByShipId(request.getShipId()).orElseThrow(() -> new RuntimeException("Ship not found: " + request.getShipId()));
+
+            dockLock.lock();
+            try {
+                dockRespository.releaseDock(dock.getNumber());
+                responseObserver.onNext(LeaveDockResponse.newBuilder()
+                        .setShipId(request.getShipId())
+                        .setDockNumber(dock.getNumber())
+                        .setDockSize(dock.getSize())
+                        .build());
+                responseObserver.onCompleted();
+                CHANGED.signalAll();
+            } finally {
+                dockLock.unlock();
+            }
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+        } catch (IllegalStateException e) {
+            responseObserver.onError(Status.FAILED_PRECONDITION.withDescription(e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+        } finally {
+            repoLock.unlock();
+        }
+
+    }
+
+    private static int shipsAhead(Deque<Ship> q, Ship s) {
         int i = 0;
         for (Ship x : q) {
             if (x == s) return i;
@@ -154,6 +174,7 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
         }
         return i;
     }
+
 
 
 }

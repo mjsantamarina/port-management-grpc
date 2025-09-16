@@ -2,6 +2,7 @@ package ar.edu.itba.pod.g10.server.repositories;
 
 import ar.edu.itba.pod.g10.server.locks.Locks;
 import ar.edu.itba.pod.g10.server.models.Dock;
+import ar.edu.itba.pod.g10.server.models.Ship;
 import ar.edu.itba.pod.grpc.dock.AddDockRequest;
 import ar.edu.itba.pod.grpc.utils.DockStatus;
 import ar.edu.itba.pod.grpc.utils.Size;
@@ -65,11 +66,12 @@ public class DockRespository {
         }
     }
 
-    public Dock assignDock(Size shipSize) {
+    public Dock assignDock(Ship ship) {
         Locks.DOCK_LOCK.lock();
         try {
-            Dock d = findAvailableDock(shipSize).orElseThrow(() -> new IllegalStateException("No available dock"));
+            Dock d = findAvailableDock(ship.getSize()).orElseThrow(() -> new IllegalStateException("No available dock"));
             d.setStatus(DockStatus.DOCK_STATUS_BUSY);
+            d.setShip(ship);
             return d;
         } finally {
             Locks.DOCK_LOCK.unlock();
@@ -94,6 +96,36 @@ public class DockRespository {
             case SIZE_LARGE -> java.util.List.of(Size.SIZE_LARGE);
             default -> java.util.List.of();
         };
+    }
+
+
+    public void releaseDock(int dockNumber) {
+        Locks.DOCK_LOCK.lock();
+        try {
+            Dock dock = getDockByNumber(dockNumber).orElseThrow(() -> new IllegalArgumentException("Dock not found: " + dockNumber));
+            if (dock.getStatus() != DockStatus.DOCK_STATUS_BUSY) {
+                throw new IllegalStateException("Dock " + dockNumber + " is not busy");
+            }
+            dock.setStatus(DockStatus.DOCK_STATUS_IDLE);
+            dock.setShip(null);
+        } finally {
+            Locks.DOCK_LOCK.unlock();
+        }
+    }
+
+
+    //TODO: CHECKEAR ESTO
+    public Optional<Ship> getAttachedShipById(String shipId) {
+        return docksBySize.values().stream().flatMap(Collection::stream)
+                .filter(dock -> dock.getShip() != null && dock.getShip().getId().equals(shipId))
+                .map(Dock::getShip)
+                .findFirst();
+    }
+
+    public Optional<Dock> getDockByShipId(String shipId) {
+        return docksBySize.values().stream().flatMap(Collection::stream)
+                .filter(dock -> dock.getShip() != null && dock.getShip().getId().equals(shipId))
+                .findFirst();
     }
 
 

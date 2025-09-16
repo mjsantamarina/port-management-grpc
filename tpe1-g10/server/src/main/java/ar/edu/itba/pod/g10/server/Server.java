@@ -22,7 +22,7 @@ public class Server {
         int port = 50051;
         io.grpc.Server server = ServerBuilder.forPort(port)
                 .addService(new DockServant(dockRespository))
-                .addService(new ShipServant(dockRespository, shipRepository))
+                .addService(new ShipServant(shipRepository, dockRespository))
                 .build();
         server.start();
         logger.info("Server started, listening on " + port);
