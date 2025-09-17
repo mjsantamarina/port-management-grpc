@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+import "utils/utils_type.proto";
+
+package crane;
+
+option java_package = "ar.edu.itba.pod.grpc.crane";
+option java_outer_classname = "CraneServiceModel";
+option java_multiple_files = true;
+
+service CraneService {
+  rpc UnloadContainers(stream UnloadContainersRequest) returns (stream UnloadContainersResponse);
+  rpc GetCraneStatus(google.protobuf.UInt32Value) returns (CraneStatusResponse);
+  rpc FixCrane(google.protobuf.UInt32Value) returns (CraneStatusResponse);
+}
+
+
+message UnloadContainersRequest {
+  uint32 crane_number = 1;
+  string container_id = 2;
+}
+
+message UnloadContainersResponse {
+  string container_id = 1;
+  uint32 crane_number = 2;
+}
+
+message CraneStatusResponse {
+  utils.CraneStatus crane_status = 1;
+  uint32 crane_number = 2;
+}
+
+

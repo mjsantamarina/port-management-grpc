@@ -1,34 +1,57 @@
 package ar.edu.itba.pod.g10.server.servants;
 
+import ar.edu.itba.pod.g10.server.models.Crane;
 import ar.edu.itba.pod.g10.server.models.Dock;
-import ar.edu.itba.pod.g10.server.repositories.DockRespository;
-import ar.edu.itba.pod.grpc.dock.AddDockRequest;
-import ar.edu.itba.pod.grpc.dock.DockServiceGrpc;
-import ar.edu.itba.pod.grpc.dock.DockStatusResponse;
+import ar.edu.itba.pod.g10.server.repositories.CraneRepository;
+import ar.edu.itba.pod.g10.server.repositories.DockRepository;
+import ar.edu.itba.pod.grpc.dock.*;
 import com.google.protobuf.UInt32Value;
 import io.grpc.stub.StreamObserver;
 
 public class DockServant extends DockServiceGrpc.DockServiceImplBase {
 
-    private final DockRespository dockRespository;
+    private final DockRepository dockRepository;
+    private final CraneRepository craneRepository;
 
-    public DockServant(DockRespository dockRespository) {
-        this.dockRespository = dockRespository;
+    public DockServant(DockRepository dockRepository, CraneRepository craneRepository) {
+        this.dockRepository = dockRepository;
+        this.craneRepository = craneRepository;
     }
+
+
+
 
     @Override
-    public void addDock(AddDockRequest request, StreamObserver<UInt32Value> responseObserver){
-        int dockNumber = dockRespository.addDock(request.getDockSize());
-        responseObserver.onNext(UInt32Value.of(dockNumber));
+    public void addDock(AddDockRequest request, StreamObserver<AddDockResponse> responseObserver){
+        int dockNumber = dockRepository.addDock(request.getDockSize());
+        responseObserver.onNext(AddDockResponse.newBuilder()
+                .setDockNumber(dockNumber)
+                .setDockSize(request.getDockSize())
+                .build());
         responseObserver.onCompleted();
     }
+
+
+    @Override
+    public void addCraneToDock(AddCraneToDockRequest request, StreamObserver<AddCraneToDockResponse> responseObserver) {
+        Dock dock = dockRepository.getDockByNumber(request.getDockNumber()).orElseThrow(() -> new RuntimeException("Dock not found"));
+        Crane crane = dock.addCrane(request.getContainerAmount(), craneRepository.getNextCraneNumber());
+        responseObserver.onNext(AddCraneToDockResponse.newBuilder()
+                .setCraneNumber(crane.getId()).setLastContainerAmount(Integer.valueOf(0))
+                .setProvidedContainerAmount(request.getContainerAmount()).build()
+        );
+        responseObserver.onCompleted();
+    }
+
+
+
 
 
     @Override
     public void toggleDockStatus(UInt32Value request, StreamObserver<DockStatusResponse> responseObserver){
         Dock dock;
         try {
-            dock = dockRespository.toggleDock(request.getValue());
+            dock = dockRepository.toggleDock(request.getValue());
         } catch (Exception e) {
             responseObserver.onError(
                     io.grpc.Status.PERMISSION_DENIED

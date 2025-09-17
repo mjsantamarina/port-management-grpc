@@ -3,34 +3,44 @@ package ar.edu.itba.pod.g10.server.repositories;
 import ar.edu.itba.pod.g10.server.locks.Locks;
 import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.g10.server.models.Ship;
-import ar.edu.itba.pod.grpc.dock.AddDockRequest;
 import ar.edu.itba.pod.grpc.utils.DockStatus;
 import ar.edu.itba.pod.grpc.utils.Size;
-import com.google.protobuf.UInt32Value;
-import io.grpc.stub.StreamObserver;
 
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
-public class DockRespository {
-    private int dockAmmount;
+public class DockRepository {
+    private int dockAmount;
     private final ConcurrentMap<Size, Deque<Dock>> docksBySize;
+    private final ConcurrentMap<Integer, Dock> dockMap;
 
-    public DockRespository() {
-        this.dockAmmount = 0;
+
+    public DockRepository() {
+        this.dockAmount = 0;
         this.docksBySize = new ConcurrentHashMap<>();
+        for(Size size : Size.values()){
+            docksBySize.put(size, new ConcurrentLinkedDeque<>());
+        }
+        this.dockMap = new ConcurrentHashMap<>();
+
     }
 
     public synchronized int addDock(Size dockSize) {
-        dockAmmount++;
-        Dock toAdd = new Dock(dockAmmount, dockSize, DockStatus.DOCK_STATUS_IDLE);
+        dockAmount++;
+        Dock toAdd = new Dock(dockAmount, dockSize, DockStatus.DOCK_STATUS_IDLE);
         this.docksBySize.get(dockSize).add(toAdd);
-        return dockAmmount;
+        return dockAmount;
     }
+
+    public Dock dockById(int dockNumber) {
+        return dockMap.get(dockNumber);
+    }
+
 
     public Dock toggleDock(int dockNumber) {
         Optional<Dock> maybeDock = getDockByNumber(dockNumber);

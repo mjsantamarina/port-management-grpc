@@ -11,8 +11,8 @@ option java_outer_classname = "DockServiceModel";
 option java_multiple_files = true;
 
 service DockService {
-  rpc AddDock(AddDockRequest) returns (google.protobuf.UInt32Value);
-  rpc AddCraneToDock(AddCraneToDockRequest) returns (DockStatusResponse);
+  rpc AddDock(AddDockRequest) returns (AddDockResponse);
+  rpc AddCraneToDock(AddCraneToDockRequest) returns (AddCraneToDockResponse);
   rpc ToggleDockStatus(google.protobuf.UInt32Value) returns (DockStatusResponse);
 }
 
@@ -20,9 +20,24 @@ message AddDockRequest {
   utils.Size dock_size = 1;
 }
 
+message AddDockResponse {
+  uint32 dock_number = 1;
+  utils.Size dock_size = 2;
+}
+
+
 message AddCraneToDockRequest {
   uint32 dock_number = 1;
-  uint32 container_ammount = 2;
+  uint32 container_amount = 2;
+}
+
+
+message AddCraneToDockResponse {
+  uint32 crane_number = 1;
+  uint32 last_container_amount = 2;
+  uint32 provided_container_amount = 3;
+  AddCraneToDockResponse status = 4;
+
 }
 
 message DockStatusResponse {

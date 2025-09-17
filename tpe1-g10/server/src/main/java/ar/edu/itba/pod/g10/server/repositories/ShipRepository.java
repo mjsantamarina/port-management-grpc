@@ -2,8 +2,10 @@ package ar.edu.itba.pod.g10.server.repositories;
 
 import ar.edu.itba.pod.g10.server.models.Ship;
 
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
@@ -12,11 +14,13 @@ public class ShipRepository {
     private int shipCount;
     private final Deque<Ship> shipQueue;
     private final ConcurrentMap<String, Ship> shipMap;
+    private final List<String> containerList;
 
 
     public ShipRepository() {
         this.shipQueue = new ConcurrentLinkedDeque<>();
         this.shipMap = new ConcurrentHashMap<>();
+        this.containerList = new ArrayList<>();
     }
 
     public void addShip(Ship ship) {
@@ -48,4 +52,9 @@ public class ShipRepository {
             return true;
         }
     }
+
+
+
+
+
 }

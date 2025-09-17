@@ -30,3 +30,11 @@ enum DockEventType {
   QUEUE_UPDATE = 2;
   ASSIGNED = 3;
 }
+
+enum CraneStatus {
+  CRANE_STATUS_UNSPECIFIED = 0;
+  CRANE_STATUS_UNLOADING = 1;
+  CRANE_STATUS_CLOSED = 2;
+  CRANE_STATUS_OPEN = 3;
+
+}

@@ -3,7 +3,7 @@ package ar.edu.itba.pod.g10.server.servants;
 import ar.edu.itba.pod.g10.server.locks.Locks;
 import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.g10.server.models.Ship;
-import ar.edu.itba.pod.g10.server.repositories.DockRespository;
+import ar.edu.itba.pod.g10.server.repositories.DockRepository;
 import ar.edu.itba.pod.g10.server.repositories.ShipRepository;
 import ar.edu.itba.pod.grpc.dock.DockStatusResponse;
 import ar.edu.itba.pod.grpc.ship.*;
@@ -14,33 +14,37 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 
+import java.util.Arrays;
 import java.util.Deque;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.Condition;
 
 public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
 
     private final ShipRepository shipRepository;
-    private final DockRespository dockRespository;
+    private final DockRepository dockRepository;
     private static final Condition CHANGED = Locks.SHIP_REPOSITORY_LOCK.newCondition();
 
-    public ShipServant(ShipRepository shipRepository, DockRespository dockRespository) {
+    public ShipServant(ShipRepository shipRepository, DockRepository dockRepository) {
         this.shipRepository = shipRepository;
-        this.dockRespository = dockRespository;
+        this.dockRepository = dockRepository;
     }
 
-
-    private static int countContainers(String input) {
+    private static Deque<String> countContainers(String input) {
         if (input == null || input.isEmpty()) {
-            return 0;
+            return null;
         }
-        return input.split("#").length;
+        Deque<String> containers = new ConcurrentLinkedDeque<>();
+             containers.addAll( Arrays.stream(input.split("#")).toList());
+        return containers;
     }
 
     @Override
     public void getDockStatus(UInt32Value request, StreamObserver<DockStatusResponse> responseObserver) {
         DockStatusResponse.Builder responseBuilder = DockStatusResponse.newBuilder();
         try {
-            Dock dock = dockRespository.getDockByNumber(request.getValue())
+            Dock dock = dockRepository.getDockByNumber(request.getValue())
                     .orElseThrow(() -> new IllegalArgumentException("Dock not found: " + request.getValue()));
             responseBuilder.setDockNumber(dock.getNumber())
                     .setDockSize(dock.getSize())
@@ -56,6 +60,8 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
 
     @Override
     public void requestDock(DockRequest request, StreamObserver<DockResponse> responseObserver) {
+
+
         final Ship ship = new Ship(request.getShipId(), request.getShipSize(), countContainers(request.getShipContainers()));
         if (!shipRepository.addShipIfAbsent(ship)) {
             responseObserver.onError(io.grpc.Status.ALREADY_EXISTS.withDescription("Ship already requested: " + ship.getId()).asRuntimeException());
@@ -86,8 +92,8 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
                 if (!shipRepository.getShipQueue().isEmpty() && shipRepository.getShipQueue().peekFirst() == ship) {
                     dockLock.lock();
                     try {
-                        if (dockRespository.hasAvailableDock(ship.getSize())) {
-                            Dock dock = dockRespository.assignDock(ship);
+                        if (dockRepository.hasAvailableDock(ship.getSize())) {
+                            Dock dock = dockRepository.assignDock(ship);
                             shipRepository.getShipQueue().pollFirst();
                             responseObserver.onNext(DockResponse.newBuilder()
                                     .setShipId(ship.getId())
@@ -139,11 +145,11 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
         repoLock.lock();
         try {
 
-            Dock dock = dockRespository.getDockByShipId(request.getShipId()).orElseThrow(() -> new RuntimeException("Ship not found: " + request.getShipId()));
+            Dock dock = dockRepository.getDockByShipId(request.getShipId()).orElseThrow(() -> new RuntimeException("Ship not found: " + request.getShipId()));
 
             dockLock.lock();
             try {
-                dockRespository.releaseDock(dock.getNumber());
+                dockRepository.releaseDock(dock.getNumber());
                 responseObserver.onNext(LeaveDockResponse.newBuilder()
                         .setShipId(request.getShipId())
                         .setDockNumber(dock.getNumber())
