@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+import "utils/utils_type.proto";
+
+package report;
+
+option java_package = "ar.edu.itba.pod.grpc.report";
+option java_outer_classname = "ReportServiceModel";
+option java_multiple_files = true;
+
+service ReportService {
+  rpc PendingShips(google.protobuf.Empty) returns (PendingResponse);
+  rpc UnloadedContainers(UnloadedRequest) returns (UnloadedResponse);
+}
+
+message PendingResponse {
+  repeated ShipInfo ships = 1;
+}
+
+message ShipInfo {
+  string ship_id = 1;
+  utils.Size size = 2;
+  repeated string containers = 3; // Para contar contenedores
+}
+
+message UnloadedRequest {
+  google.protobuf.UInt32Value crane = 1; // Filtro opcional
+  google.protobuf.UInt32Value dock = 2; // Filtro opcional
+}
+
+message UnloadedResponse {
+  repeated UnloadInfo unloads = 1;
+}
+
+message UnloadInfo {
+  string container_id = 1;
+  uint32 crane_number = 2;
+  uint32 unloaded_since_maintenance = 3;
+  uint32 max_containers = 4;
+  uint32 dock_number = 5;
+  utils.Size dock_size = 6;
+}
