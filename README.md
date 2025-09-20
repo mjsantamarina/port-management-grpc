@@ -20,6 +20,7 @@ tpe1-g10/
 Para compilar todos los módulos y crear paquetes de distribución:
 
 ```bash
+cd tpe1-g10
 mvn clean install
 ```
 
@@ -31,13 +32,15 @@ Esto hará:
 
 ## Ejecutar el Servidor
 
-### 1. Navegar al directorio de distribución del servidor:
+### 1. Navegar al directorio de distribución del servidor y descomprimir el archivo tpe1-g10-server-2025.2Q-bin.tar.gz:
 ```bash
-cd server/target/tpe1-g10-server-2025.2Q/
+cd server/target/
+tar -xzf tpe1-g10-server-2025.2Q-bin.tar.gz
 ```
 
 ### 2. Hacer el script ejecutable e iniciar el servidor:
 ```bash
+cd tpe1-g10-server-2025.2Q
 chmod +x run-server.sh
 ./run-server.sh
 ```
@@ -53,13 +56,15 @@ El Cliente de Muelles gestiona las operaciones de muelles incluyendo agregar mue
 
 ### Configuración
 
-1. **Navegar al directorio de distribución del cliente de muelles:**
+1. **Navegar al directorio de distribución del cliente de muelles y descromprimir el archivo tpe1-g10-dock-client-2025.2Q-bin.tar.gz:**
    ```bash
-   cd dock-client/target/tpe1-g10-dock-client-2025.2Q/
+   cd dock-client/target/
+   tar -xzf tpe1-g10-server-2025.2Q-bin.tar.gz
    ```
 
 2. **Hacer el script ejecutable:**
    ```bash
+   cd tpe1-g10-dock-client-2025.2Q/
    chmod +x dock.sh
    ```
 
