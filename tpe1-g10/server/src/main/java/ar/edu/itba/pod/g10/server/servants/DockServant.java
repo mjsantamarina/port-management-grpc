@@ -7,9 +7,12 @@ import ar.edu.itba.pod.g10.server.repositories.DockRepository;
 import ar.edu.itba.pod.grpc.dock.*;
 import com.google.protobuf.UInt32Value;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DockServant extends DockServiceGrpc.DockServiceImplBase {
 
+    private static final Logger logger = LoggerFactory.getLogger(DockServant.class);
     private final DockRepository dockRepository;
     private final CraneRepository craneRepository;
 
@@ -49,10 +52,14 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
 
     @Override
     public void toggleDockStatus(UInt32Value request, StreamObserver<DockStatusResponse> responseObserver){
+        logger.info("toggleDockStatus called for dock number: {}", request.getValue());
         Dock dock;
         try {
+            logger.info("Attempting to toggle dock status...");
             dock = dockRepository.toggleDock(request.getValue());
+            logger.info("Successfully toggled dock. New status: {}, Size: {}", dock.getStatus(), dock.getSize());
         } catch (Exception e) {
+            logger.error("Error toggling dock status: {}", e.getMessage(), e);
             responseObserver.onError(
                     io.grpc.Status.PERMISSION_DENIED
                             .withDescription(e.getMessage())
@@ -60,10 +67,15 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
             );
             return;
         }
+        logger.info("Building response...");
         DockStatusResponse dockStatusResponse = DockStatusResponse.newBuilder()
                 .setDockNumber(dock.getNumber())
                 .setDockSize(dock.getSize())
                 .setDockStatus(dock.getStatus())
                 .build();
+        logger.info("Sending response back to client...");
+        responseObserver.onNext(dockStatusResponse);
+        responseObserver.onCompleted();
+        logger.info("toggleDockStatus completed successfully");
     }
 }
