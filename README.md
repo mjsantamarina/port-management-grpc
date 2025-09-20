@@ -34,15 +34,12 @@ Esto hará:
 
 ### 1. Navegar al directorio de distribución del servidor y descomprimir el archivo tpe1-g10-server-2025.2Q-bin.tar.gz:
 ```bash
-cd server/target/
-tar -xzf tpe1-g10-server-2025.2Q-bin.tar.gz
+cd server/target/ && tar -xzf tpe1-g10-server-2025.2Q-bin.tar.gz
 ```
 
 ### 2. Hacer el script ejecutable e iniciar el servidor:
 ```bash
-cd tpe1-g10-server-2025.2Q
-chmod +x run-server.sh
-./run-server.sh
+cd tpe1-g10-server-2025.2Q && chmod +x run-server.sh && ./run-server.sh
 ```
 
 El servidor iniciará en el puerto `50051` por defecto y mostrará:
@@ -58,14 +55,12 @@ El Cliente de Muelles gestiona las operaciones de muelles incluyendo agregar mue
 
 1. **Navegar al directorio de distribución del cliente de muelles y descromprimir el archivo tpe1-g10-dock-client-2025.2Q-bin.tar.gz:**
    ```bash
-   cd dock-client/target/
-   tar -xzf tpe1-g10-server-2025.2Q-bin.tar.gz
+   cd dock-client/target/ && tar -xzf tpe1-g10-server-2025.2Q-bin.tar.gz
    ```
 
 2. **Hacer el script ejecutable:**
    ```bash
-   cd tpe1-g10-dock-client-2025.2Q/
-   chmod +x dock.sh
+   cd tpe1-g10-dock-client-2025.2Q/ && chmod +x dock.sh
    ```
 
 ### Operaciones Disponibles
@@ -100,6 +95,8 @@ Added 🛟 Dock #1 (S)
 ```
 
 #### Agregar una Grúa a un Muelle
+TODO: Agregar una grua a un dock que no existe rompe el server
+
 Agrega una grúa con capacidad de contenedores especificada a un muelle existente.
 
 ```bash
@@ -127,6 +124,7 @@ Added 🏗️ Crane #1 (0📦) [10] on 🛟 Dock #1 ()
 ```
 
 #### Alternar Estado del Muelle
+TODO: Cambiar para que sea con open/close en vez de toggle
 Cambia el estado operacional de un muelle (abierto/cerrado).
 
 ```bash
@@ -148,6 +146,25 @@ Cambia el estado operacional de un muelle (abierto/cerrado).
 ```
 OPEN 🛟 Dock #1 (L)
 ```
+
+## Problemas TODO
+TODO: Crane está tirando el server cuando corre
+```bash
+sh crane.sh -DserverAddress=localhost:50051 -Daction=unload -Dcrane=1 -Dcontainer=X1
+```
+```
+2025-09-20 14:38:27 INFO  CraneClient:47 - tpe1-g10 Crane Client Starting ...
+Enter Container ID: Error: UNKNOWN
+```
+
+and in server:
+```
+java.lang.NullPointerException: Cannot invoke "ar.edu.itba.pod.g10.server.models.Crane.getDock()" because "crane" is null
+        at ar.edu.itba.pod.g10.server.servants.CraneServant$1.onNext(CraneServant.java:35)
+
+Crane crane = craneRepository.getCrane(unloadContainersRequest.getCraneNumber()); is returning null
+```
+
 
 ### Problemas Comunes y Solución de Problemas
 
