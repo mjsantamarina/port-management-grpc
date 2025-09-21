@@ -95,7 +95,7 @@ Added 🛟 Dock #1 (S)
 ```
 
 #### Agregar una Grúa a un Muelle
-TODO: Agregar una grua a un dock que no existe rompe el server
+TODO: Agregar una grúa a un dock que no existe rompe el server
 
 Agrega una grúa con capacidad de contenedores especificada a un muelle existente.
 
@@ -146,6 +146,104 @@ Cambia el estado operacional de un muelle (abierto/cerrado).
 ```
 OPEN 🛟 Dock #1 (L)
 ```
+o bien:
+```
+CLOSED 🛟 Dock #1 (S)
+```
+
+## Ejecutar el Cliente de Barcos
+
+El Cliente de Barcos gestiona las operaciones de barcos incluyendo solicitud de muelle, verificación de estado de muelle y abandono de muelle.
+
+### Configuración
+
+1. **Navegar al directorio de distribución del cliente de barcos y descomprimir el archivo tpe1-g10-ship-client-2025.2Q-bin.tar.gz:**
+   ```bash
+   cd ship-client/target/ && tar -xzf tpe1-g10-ship-client-2025.2Q-bin.tar.gz
+   ```
+
+2. **Hacer el script ejecutable:**
+   ```bash
+   cd tpe1-g10-ship-client-2025.2Q/ && chmod +x ship.sh
+   ```
+
+### Operaciones Disponibles
+
+#### Solicitar un Muelle
+Solicita un muelle para un barco, esperando en cola si es necesario, con notificaciones en tiempo real.
+
+```bash
+./ship.sh -DserverAddress=localhost:50051 -Daction=requestDock -Did=<ID_BARCO> -Dsize=<TAMAÑO> -Dcontainers=<CONTENEDORES>
+```
+
+<u>Parámetros:</u>
+- `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
+- `action`: Debe ser `requestDock`
+- `id`: ID del barco (e.g., `SHIP1`)
+- `size`: Tamaño del barco - `S` (Pequeño), `M` (Mediano), o `L` (Grande)
+- `containers`: Lista de contenedores separados por `#` (e.g., `A1#A2#A3`)
+
+<u>Ejemplo:</u>
+```bash
+./ship.sh -DserverAddress=localhost:50051 -Daction=requestDock -Did=SHIP1 -Dsize=S -Dcontainers=A1#A2#A3
+```
+
+<u>Salida Esperada:</u>
+```
+⚓ SHIP1 (S) (3📦) is waiting for a dock with 0 ships ahead
+⚓ SHIP1 (S) (3📦) in 🛟 Dock #1 (S)
+```
+
+#### Verificar Estado de un Muelle
+Verifica el estado de un muelle (cerrado/abierto/libre/ocupado, con info de barco si ocupado).
+
+```bash
+./ship.sh -DserverAddress=localhost:50051 -Daction=checkDock -Ddock=<NÚMERO_MUELLE>
+```
+
+<u>Parámetros:</u>
+- `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
+- `action`: Debe ser `checkDock`
+- `dock`: Número del muelle a verificar
+
+<u>Ejemplo:</u>
+```bash
+./ship.sh -DserverAddress=localhost:50051 -Daction=checkDock -Ddock=1
+```
+
+<u>Salida Esperada:</u>
+```
+IDLE 🛟 Dock #1 (S)
+```
+o si ocupado:
+```
+BUSY ⚓ SHIP1 (S) (3📦) in 🛟 Dock #1 (S)
+```
+
+#### Abandonar un Muelle
+Abandona un muelle después de completar la descarga.
+
+```bash
+./ship.sh -DserverAddress=localhost:50051 -Daction=leaveDock -Did=<ID_BARCO> -Ddock=<NÚMERO_MUELLE>
+```
+
+<u>Parámetros:</u>
+- `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
+- `action`: Debe ser `leaveDock`
+- `id`: ID del barco
+- `dock`: Número del muelle a abandonar
+
+<u>Ejemplo:</u>
+```bash
+./ship.sh -DserverAddress=localhost:50051 -Daction=leaveDock -Did=SHIP1 -Ddock=1
+```
+
+<u>Salida Esperada:</u>
+```
+⚓ SHIP1 (S) (0📦) left 🛟 Dock #1 (S)
+```
+
+
 
 ## Problemas TODO
 TODO: Crane está tirando el server cuando corre
@@ -163,6 +261,225 @@ java.lang.NullPointerException: Cannot invoke "ar.edu.itba.pod.g10.server.models
         at ar.edu.itba.pod.g10.server.servants.CraneServant$1.onNext(CraneServant.java:35)
 
 Crane crane = craneRepository.getCrane(unloadContainersRequest.getCraneNumber()); is returning null
+```
+
+## Ejecutar el Cliente de Grúas
+
+El Cliente de Grúas gestiona las operaciones de grúas incluyendo descarga de contenedores (interactiva), verificación de estado y mantenimiento.
+
+### Configuración
+
+1. **Navegar al directorio de distribución del cliente de grúas y descomprimir el archivo tpe1-g10-crane-client-2025.2Q-bin.tar.gz:**
+   ```bash
+   cd crane-client/target/ && tar -xzf tpe1-g10-crane-client-2025.2Q-bin.tar.gz
+   ```
+
+2. **Hacer el script ejecutable:**
+   ```bash
+   cd tpe1-g10-crane-client-2025.2Q/ && chmod +x crane.sh
+   ```
+
+### Operaciones Disponibles
+
+#### Descargar Contenedores
+Inicia la descarga interactiva de contenedores desde una grúa.
+
+```bash
+./crane.sh -DserverAddress=localhost:50051 -Daction=unload -Dcrane=<NÚMERO_GRÚA> -Dcontainer=<ID_CONTENEDOR_INICIAL>
+```
+
+<u>Parámetros:</u>
+- `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
+- `action`: Debe ser `unload`
+- `crane`: Número de la grúa
+- `container`: ID del primer contenedor
+
+<u>Ejemplo:</u>
+```bash
+./crane.sh -DserverAddress=localhost:50051 -Daction=unload -Dcrane=1 -Dcontainer=B1
+```
+
+<u>Salida Esperada:</u>
+```
+📦 Unloaded B1 from 🏗️ Crane #1 (1📦) [15] on 🛟 Dock #1 (S)
+Enter Container ID: B2
+📦 Unloaded B2 from 🏗️ Crane #1 (2📦) [15] on 🛟 Dock #1 (S)
+...
+Unloading Ended on 🛟 Dock #1 (S)
+```
+
+#### Verificar Estado de una Grúa
+Verifica el estado de una grúa (UNLOADING/MAINTENANCE/CLOSED/OPEN).
+
+```bash
+./crane.sh -DserverAddress=localhost:50051 -Daction=checkCrane -Dcrane=<NÚMERO_GRÚA>
+```
+
+<u>Parámetros:</u>
+- `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
+- `action`: Debe ser `checkCrane`
+- `crane`: Número de la grúa
+
+<u>Ejemplo:</u>
+```bash
+./crane.sh -DserverAddress=localhost:50051 -Daction=checkCrane -Dcrane=1
+```
+
+<u>Salida Esperada:</u>
+```
+OPEN 🏗️ Crane #1 (0📦) [15] on 🛟 Dock #1 (S)
+```
+
+#### Realizar Mantenimiento en una Grúa
+Realiza mantenimiento en una grúa, reiniciando contador.
+
+```bash
+./crane.sh -DserverAddress=localhost:50051 -Daction=fixCrane -Dcrane=<NÚMERO_GRÚA>
+```
+
+<u>Parámetros:</u>
+- `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
+- `action`: Debe ser `fixCrane`
+- `crane`: Número de la grúa
+
+<u>Ejemplo:</u>
+```bash
+./crane.sh -DserverAddress=localhost:50051 -Daction=fixCrane -Dcrane=1
+```
+
+<u>Salida Esperada:</u>
+```
+OPEN 🏗️ Crane #1 (0📦) [15] on 🛟 Dock #1 (S)
+```
+
+## Ejecutar el Cliente de Observación
+
+El Cliente de Observación gestiona notificaciones en tiempo real para una grúa.
+
+### Configuración
+
+1. **Navegar al directorio de distribución del cliente de observación y descomprimir el archivo tpe1-g10-watch-client-2025.2Q-bin.tar.gz:**
+   ```bash
+   cd watch-client/target/ && tar -xzf tpe1-g10-watch-client-2025.2Q-bin.tar.gz
+   ```
+
+2. **Hacer el script ejecutable:**
+   ```bash
+   cd tpe1-g10-watch-client-2025.2Q/ && chmod +x watch.sh
+   ```
+
+### Operaciones Disponibles
+
+#### Observar Notificaciones de una Grúa
+Registra para recibir eventos en tiempo real de una grúa.
+
+```bash
+./watch.sh -DserverAddress=localhost:50051 -Daction=watchCrane -Dcrane=<NÚMERO_GRÚA>
+```
+
+<u>Parámetros:</u>
+- `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
+- `action`: Debe ser `watchCrane`
+- `crane`: Número de la grúa
+
+<u>Ejemplo:</u>
+```bash
+./watch.sh -DserverAddress=localhost:50051 -Daction=watchCrane -Dcrane=1
+```
+
+<u>Salida Esperada:</u>
+```
+OPEN 🏗️ Crane #1 (0📦) [15] on 🛟 Dock #1 (S)
+📦 Unloaded B1 from 🏗️ Crane #1 (1📦) [15] on 🛟 Dock #1 (S)
+...
+```
+
+#### Detener Notificaciones de una Grúa
+Anula el registro de notificaciones para una grúa.
+
+```bash
+./watch.sh -DserverAddress=localhost:50051 -Daction=stopWatch -Dcrane=<NÚMERO_GRÚA>
+```
+
+<u>Parámetros:</u>
+- `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
+- `action`: Debe ser `stopWatch`
+- `crane`: Número de la grúa
+
+<u>Ejemplo:</u>
+```bash
+./watch.sh -DserverAddress=localhost:50051 -Daction=stopWatch -Dcrane=1
+```
+
+<u>Salida Esperada:</u>
+```
+Notificaciones detenidas para grúa #1
+```
+
+## Ejecutar el Cliente de Manifiestos
+
+El Cliente de Manifiestos genera reportes de barcos pendientes y contenedores descargados en archivos TXT.
+
+### Configuración
+
+1. **Navegar al directorio de distribución del cliente de manifiestos y descomprimir el archivo tpe1-g10-manifest-client-2025.2Q-bin.tar.gz:**
+   ```bash
+   cd manifest-client/target/ && tar -xzf tpe1-g10-manifest-client-2025.2Q-bin.tar.gz
+   ```
+
+2. **Hacer el script ejecutable:**
+   ```bash
+   cd tpe1-g10-manifest-client-2025.2Q/ && chmod +x manifest.sh
+   ```
+
+### Operaciones Disponibles
+
+#### Reporte de Barcos Pendientes
+Lista barcos pendientes de muelle en un archivo TXT.
+
+```bash
+./manifest.sh -DserverAddress=localhost:50051 -Daction=pending -DoutPath=<RUTA_ARCHIVO>
+```
+
+<u>Parámetros:</u>
+- `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
+- `action`: Debe ser `pending`
+- `outPath`: Ruta al archivo TXT de salida
+
+<u>Ejemplo:</u>
+```bash
+./manifest.sh -DserverAddress=localhost:50051 -Daction=pending -DoutPath=pending.txt
+```
+
+<u>Contenido Esperado en pending.txt:</u>
+```
+⚓ SHIP1 (S) (3📦)
+⚓ SHIP2 (M) (5📦)
+```
+
+#### Reporte de Contenedores Descargados
+Lista contenedores descargados (histórica, con filtros opcionales) en un archivo TXT.
+
+```bash
+./manifest.sh -DserverAddress=localhost:50051 -Daction=containers -DoutPath=<RUTA_ARCHIVO> -Dcrane=<NÚMERO_GRÚA> -Ddock=<NÚMERO_MUELLE>
+```
+
+<u>Parámetros:</u>
+- `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
+- `action`: Debe ser `containers`
+- `outPath`: Ruta al archivo TXT de salida
+- `crane`: Número de grúa (opcional filtro)
+- `dock`: Número de muelle (opcional filtro)
+
+<u>Ejemplo:</u>
+```bash
+./manifest.sh -DserverAddress=localhost:50051 -Daction=containers -DoutPath=containers.txt -Dcrane=1 -Ddock=1
+```
+
+<u>Contenido Esperado en containers.txt:</u>
+```
+📦 A1 unloaded from 🏗️ Crane #1 (1📦) [15] on 🛟 Dock #1 (S)
+📦 A2 unloaded from 🏗️ Crane #1 (2📦) [15] on 🛟 Dock #1 (S)
 ```
 
 
