@@ -25,6 +25,11 @@ message UnloadContainersRequest {
 message UnloadContainersResponse {
   string container_id = 1;
   uint32 crane_number = 2;
+  uint32 dock_number = 3;
+  utils.Size dock_size = 4;
+  uint32 unloaded_containers = 5;
+  uint32 max_containers = 6;
+  bool is_last = 7;
 }
 
 message CraneStatusResponse {

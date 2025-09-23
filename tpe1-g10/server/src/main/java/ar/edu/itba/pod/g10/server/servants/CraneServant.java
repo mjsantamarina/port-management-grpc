@@ -43,11 +43,14 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
                     Ship ship = dock.getShip();
                     String expected = ship.peekContainer();
 
+
                     if (expected == null) {
                         // no quedan contenedores → termina la descarga
                         responseObserver.onCompleted();
                         return;
                     }
+
+
 
                     if (crane.needsMainteinance() || crane.getStatus() == CraneStatus.CRANE_STATUS_CLOSED) {
                         crane.setCraneStatus(CraneStatus.CRANE_STATUS_CLOSED);
@@ -63,12 +66,33 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
 
                     // descarga válida
                     ship.unloadContainer();
+
                     crane.setCurrentContainers(crane.getCurrentContainers() + 1);
                     crane.setCraneStatus(CraneStatus.CRANE_STATUS_UNLOADING);
+
+                    if(ship.getContainerAmount()==0) {
+                        // no quedan contenedores → termina la descarga
+                        responseObserver.onNext(UnloadContainersResponse.newBuilder()
+                        .setContainerId(req.getContainerId())
+                                .setCraneNumber(crane.getId())
+                                .setDockNumber(dock.getNumber())
+                                .setDockSize(dock.getSize())
+                                .setUnloadedContainers(crane.getCurrentContainers())
+                                .setMaxContainers(crane.getMaxContainers())
+                                .setIsLast(dock.getShip().getContainerAmount()==0).build());
+                        responseObserver.onCompleted();
+
+                        return;
+                    }
 
                     responseObserver.onNext(UnloadContainersResponse.newBuilder()
                             .setContainerId(req.getContainerId())
                             .setCraneNumber(crane.getId())
+                                    .setDockNumber(dock.getNumber())
+                                    .setDockSize(dock.getSize())
+                                    .setUnloadedContainers(crane.getCurrentContainers())
+                                    .setMaxContainers(crane.getMaxContainers())
+                                    .setIsLast(dock.getShip().getContainerAmount()==0)
                             .build());
 
                 } catch (Exception e) {
@@ -78,7 +102,7 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
 
             @Override
             public void onError(Throwable t) {
-                // loggear si hace falta
+                // TODO: loggear si hace falta
             }
 
             @Override

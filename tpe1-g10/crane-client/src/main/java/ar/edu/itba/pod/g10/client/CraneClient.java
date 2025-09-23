@@ -73,11 +73,20 @@ public class CraneClient {
     }
 
     private void handleUnload(int craneNumber, String firstContainer) throws InterruptedException {
+
         CountDownLatch latch = new CountDownLatch(1);
         StreamObserver<UnloadContainersRequest> requestObserver = asyncStub.unloadContainers(new StreamObserver<UnloadContainersResponse>() {
+
+
             @Override
             public void onNext(UnloadContainersResponse response) {
-                System.out.println("📦 Unloaded " + response.getContainerId() + " from 🏗️ Crane #" + response.getCraneNumber());
+                System.out.println("📦 Unloaded " + response.getContainerId() + " from 🏗️ Crane #" + response.getCraneNumber() + " (" + response.getUnloadedContainers() + "📦) [" + response.getMaxContainers() + "] on 🛟 Dock #" + response.getDockNumber());
+                latch.countDown();
+                if(!response.getIsLast()){
+                    System.out.print("Enter Container ID: ");
+                }else {
+                    System.out.println("Unloading Ended on 🛟 Dock #" + response.getDockNumber());
+                }
             }
 
             @Override
@@ -88,21 +97,20 @@ public class CraneClient {
 
             @Override
             public void onCompleted() {
-                System.out.println("Unloading Ended");
                 latch.countDown();
             }
         });
 
         // Send first container
         requestObserver.onNext(UnloadContainersRequest.newBuilder().setCraneNumber(craneNumber).setContainerId(firstContainer).build());
-
+        latch.await();
         // Interactive loop
         Scanner scanner = new Scanner(System.in);
         while (true) {
             String id = scanner.nextLine().trim();
             if (id.isEmpty()) continue;
             requestObserver.onNext(UnloadContainersRequest.newBuilder().setCraneNumber(craneNumber).setContainerId(id).build());
-            System.out.print("Enter Container ID: ");
+            latch.countDown();
             // Server calls onCompleted when end
         }
     }

@@ -24,6 +24,10 @@ public class Ship {
     }
 
 
+    public boolean hasContainers() {
+        return !containers.isEmpty();
+    }
+
     public void unloadContainer() {
         if (!containers.isEmpty()) {
             containers.pollFirst();
