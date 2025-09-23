@@ -19,6 +19,8 @@ import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
 
@@ -61,14 +63,22 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
     public void requestDock(DockRequest request, StreamObserver<DockResponse> responseObserver) {
 
 
-        final Ship ship = new Ship(request.getShipId(), request.getShipSize(), countContainers(request.getShipContainers()));
-        if (!shipRepository.addShipIfAbsent(ship)) {
-            responseObserver.onError(io.grpc.Status.ALREADY_EXISTS.withDescription("Ship already requested: " + ship.getId()).asRuntimeException());
-            return;
-        }
-
         final java.util.concurrent.locks.ReentrantLock repoLock = Locks.SHIP_REPOSITORY_LOCK;
         final java.util.concurrent.locks.ReentrantLock dockLock = Locks.DOCK_LOCK;
+        final Ship ship = new Ship(request.getShipId(), request.getShipSize(), countContainers(request.getShipContainers()));
+
+        repoLock.lock();
+        try {
+            shipRepository.addShip(ship);
+        }catch (Exception e){
+            responseObserver.onError(io.grpc.Status.ALREADY_EXISTS.withDescription("Ship already requested: " + ship.getId()).asRuntimeException());
+            return;
+        }finally {
+            repoLock.unlock();
+        }
+
+
+
 
         // condición compartida a nivel de clase (definila como static en tu servicio):
         // private static final Condition CHANGED = Locks.SHIP_REPOSITORY_LOCK.newCondition();

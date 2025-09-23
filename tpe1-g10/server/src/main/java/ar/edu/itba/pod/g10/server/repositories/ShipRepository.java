@@ -24,6 +24,9 @@ public class ShipRepository {
     }
 
     public void addShip(Ship ship) {
+        shipMap.computeIfPresent(ship.getId(), (s, existingShip) -> {
+            throw new IllegalArgumentException("Ship with ID " + ship.getId() + " already exists.");
+        });
         shipMap.put(ship.getId(), ship);
         shipQueue.addLast(ship);
         shipCount++;
