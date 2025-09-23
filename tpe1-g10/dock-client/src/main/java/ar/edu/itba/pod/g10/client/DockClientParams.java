@@ -9,7 +9,7 @@ public class DockClientParams {
     private String address;
     private String port;
     private String action;
-    private static final List<String> VALID_ACTIONS = List.of("addDock", "addCrane", "toggleDock");
+    private static final List<String> VALID_ACTIONS = List.of("addDock", "addCrane", "openDock", "closeDock");
 
     private Optional<Size> size;
     private Optional<Integer> dockNumber;
@@ -30,7 +30,7 @@ public class DockClientParams {
         }
 
         if (action == null || action.isEmpty() || !VALID_ACTIONS.contains(action)) {
-            throw new IllegalArgumentException("The action provided must be one of the following: \"addDock\", \"addCrane\" or \"toggleDock\".");
+            throw new IllegalArgumentException("The action provided must be one of the following: \"addDock\", \"addCrane\", \"openDock\" or \"closeDock\".");
         }
 
         List<String> addressAndPortParts = List.of(addressAndPort.split(":"));

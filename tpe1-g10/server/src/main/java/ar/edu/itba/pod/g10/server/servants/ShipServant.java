@@ -24,7 +24,6 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
 
     private final ShipRepository shipRepository;
     private final DockRepository dockRepository;
-    private static final Condition CHANGED = Locks.SHIP_REPOSITORY_LOCK.newCondition();
 
     public ShipServant(ShipRepository shipRepository, DockRepository dockRepository) {
         this.shipRepository = shipRepository;
@@ -74,7 +73,7 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
         // condición compartida a nivel de clase (definila como static en tu servicio):
         // private static final Condition CHANGED = Locks.SHIP_REPOSITORY_LOCK.newCondition();
         // la usamos acá:
-        final java.util.concurrent.locks.Condition changed = CHANGED;
+        final Condition CHANGED = Locks.CHANGED;
 
         repoLock.lock();
         try {
@@ -104,7 +103,7 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
                                     .setEventType(DockEventType.ASSIGNED)
                                     .build());
                             responseObserver.onCompleted();
-                            changed.signalAll();
+                            CHANGED.signalAll();
                             return;
                         }
                     } finally {
@@ -124,7 +123,7 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
                             .build());
                 }
 
-                changed.await();
+                CHANGED.await();
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
@@ -141,10 +140,9 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
     public void leaveDock(LeaveDockRequest request, StreamObserver<LeaveDockResponse> responseObserver) {
         final java.util.concurrent.locks.ReentrantLock repoLock = Locks.SHIP_REPOSITORY_LOCK;
         final java.util.concurrent.locks.ReentrantLock dockLock = Locks.DOCK_LOCK;
-
+        final Condition CHANGED = Locks.CHANGED;
         repoLock.lock();
         try {
-
             Dock dock = dockRepository.getDockByShipId(request.getShipId()).orElseThrow(() -> new RuntimeException("Ship not found: " + request.getShipId()));
 
             dockLock.lock();

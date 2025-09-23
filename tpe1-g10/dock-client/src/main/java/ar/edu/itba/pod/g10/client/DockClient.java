@@ -56,8 +56,11 @@ public class DockClient {
                 case "addCrane":
                     handleAddCrane(params.getDockNumber().orElseThrow(), params.getContainerAmount().orElseThrow());
                     break;
-                case "toggleDock":
-                    handleToggleDock(params.getDockNumber().orElseThrow());
+                case "closeDock":
+                    handleCloseDock(params.getDockNumber().orElseThrow());
+                    break;
+                case "openDock":
+                    handleOpenDock(params.getDockNumber().orElseThrow());
                     break;
             }
         } catch (StatusRuntimeException e) {
@@ -73,15 +76,28 @@ public class DockClient {
     }
 
     private void handleAddCrane(int dockNumber, int containerAmount) {
-        AddCraneToDockResponse response = dockService.addCraneToDock(AddCraneToDockRequest.newBuilder()
-                .setDockNumber(dockNumber)
-                .setContainerAmount(containerAmount)
-                .build());
-        System.out.println("Added 🏗️ Crane #" + response.getCraneNumber() + " (" + response.getLastContainerAmount() + "📦) [" + response.getProvidedContainerAmount() + "] on 🛟 Dock #" + dockNumber + " (" + sizeAsString(response.getStatus().getDockSize()) + ")");
+        try {
+            AddCraneToDockResponse response = dockService.addCraneToDock(AddCraneToDockRequest.newBuilder()
+                    .setDockNumber(dockNumber)
+                    .setContainerAmount(containerAmount)
+                    .build());
+            System.out.println("Added 🏗️ Crane #" + response.getCraneNumber() + " (" + response.getLastContainerAmount() + "📦) [" + response.getProvidedContainerAmount() + "] on 🛟 Dock #" + dockNumber + " (" + sizeAsString(response.getStatus().getDockSize()) + ")");
+        } catch (RuntimeException e) {
+            System.out.println("Dock not found");
+        }
     }
-
     private void handleToggleDock(int dockNumber) {
         DockStatusResponse response = dockService.toggleDockStatus(UInt32Value.of(dockNumber));
+        System.out.println(dockStatusAsString(response.getDockStatus()) + " 🛟 Dock #" + response.getDockNumber() + " (" + sizeAsString(response.getDockSize()) + ")");
+    }
+
+    private void handleCloseDock(int dockNumber) {
+        DockStatusResponse response = dockService.closeDock(UInt32Value.of(dockNumber));
+        System.out.println(dockStatusAsString(response.getDockStatus()) + " 🛟 Dock #" + response.getDockNumber() + " (" + sizeAsString(response.getDockSize()) + ")");
+    }
+
+    private void handleOpenDock(int dockNumber) {
+        DockStatusResponse response = dockService.openDock(UInt32Value.of(dockNumber));
         System.out.println(dockStatusAsString(response.getDockStatus()) + " 🛟 Dock #" + response.getDockNumber() + " (" + sizeAsString(response.getDockSize()) + ")");
     }
 
