@@ -31,13 +31,32 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
 
     @Override
     public void addDock(AddDockRequest request, StreamObserver<AddDockResponse> responseObserver){
-        int dockNumber = dockRepository.addDock(request.getDockSize());
-        responseObserver.onNext(AddDockResponse.newBuilder()
-                .setDockNumber(dockNumber)
-                .setDockSize(request.getDockSize())
-                .build());
-        responseObserver.onCompleted();
+        final java.util.concurrent.locks.ReentrantLock repoLock = Locks.SHIP_REPOSITORY_LOCK;
+        final Condition CHANGED = Locks.CHANGED;
+
+        repoLock.lock();
+        try {
+            int dockNumber = dockRepository.addDock(request.getDockSize());
+            CHANGED.signalAll();
+            AddDockResponse resp = AddDockResponse.newBuilder()
+                    .setDockNumber(dockNumber)
+                    .setDockSize(request.getDockSize())
+                    .build();
+
+            responseObserver.onNext(resp);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(
+                    io.grpc.Status.INTERNAL
+                            .withDescription("Unexpected error adding dock: " + e.getMessage())
+                            .withCause(e)
+                            .asRuntimeException()
+            );
+        } finally {
+            repoLock.unlock();
+        }
     }
+
 
 
     @Override
