@@ -45,5 +45,8 @@ message DockStatusResponse {
   utils.DockStatus dock_status = 1;
   uint32 dock_number = 2;
   utils.Size dock_size = 3;
+  string ship_id = 4;
+  utils.Size ship_size = 5;
+  uint32 containers_left = 6;
 }
 

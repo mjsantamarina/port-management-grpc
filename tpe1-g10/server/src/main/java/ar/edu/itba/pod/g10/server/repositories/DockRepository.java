@@ -116,6 +116,9 @@ public class DockRepository {
             if (dock.getStatus() != DockStatus.DOCK_STATUS_BUSY) {
                 throw new IllegalStateException("Dock " + dockNumber + " is not busy");
             }
+            if(dock.getShip().hasContainers()){
+                throw new IllegalStateException("Ship still has containers to unload");
+            }
             dock.setStatus(DockStatus.DOCK_STATUS_IDLE);
             dock.setShip(null);
         } finally {

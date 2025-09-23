@@ -50,6 +50,12 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
             responseBuilder.setDockNumber(dock.getNumber())
                     .setDockSize(dock.getSize())
                     .setDockStatus(dock.getStatus());
+            if (dock.getShip() != null) {
+                Ship ship = dock.getShip();
+                responseBuilder.setContainersLeft(ship.getContainerAmount())
+                        .setShipId(ship.getId())
+                        .setShipSize(ship.getSize());
+            }
             responseObserver.onNext(responseBuilder.build());
             responseObserver.onCompleted();
         } catch (IllegalArgumentException e) {
@@ -61,8 +67,6 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
 
     @Override
     public void requestDock(DockRequest request, StreamObserver<DockResponse> responseObserver) {
-
-
         final java.util.concurrent.locks.ReentrantLock repoLock = Locks.SHIP_REPOSITORY_LOCK;
         final java.util.concurrent.locks.ReentrantLock dockLock = Locks.DOCK_LOCK;
         final Ship ship = new Ship(request.getShipId(), request.getShipSize(), countContainers(request.getShipContainers()));
@@ -76,15 +80,7 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
         }finally {
             repoLock.unlock();
         }
-
-
-
-
-        // condición compartida a nivel de clase (definila como static en tu servicio):
-        // private static final Condition CHANGED = Locks.SHIP_REPOSITORY_LOCK.newCondition();
-        // la usamos acá:
         final Condition CHANGED = Locks.CHANGED;
-
         repoLock.lock();
         try {
             int lastAhead = shipsAhead(shipRepository.getShipQueue(), ship);

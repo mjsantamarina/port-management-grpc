@@ -12,6 +12,7 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.SQLOutput;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
@@ -116,7 +117,11 @@ public class ShipClient {
         DockStatusResponse response = blockingStub.getDockStatus(request);
         String statusStr = dockStatusAsString(response.getDockStatus());
         String sizeStr = sizeAsString(response.getDockSize());
-        System.out.println(statusStr + " 🛟 Dock #" + response.getDockNumber() + " (" + sizeStr + ")"); // No ship info in proto, so only status
+        if (response.getShipId().isEmpty()) {
+            System.out.println(statusStr + " 🛟 Dock #" + response.getDockNumber() + " (" + sizeStr + ")"); // No ship info in proto, so only status
+        } else {
+            System.out.printf("⚓ %s (%s) (%d📦) in 🛟 Dock #%d (%s)", response.getShipId(),sizeAsString(response.getDockSize()), response.getContainersLeft(), response.getDockNumber(), sizeAsString(response.getDockSize()));
+        }
     }
 
     private void handleLeaveDock(String id, int dockNumber) {

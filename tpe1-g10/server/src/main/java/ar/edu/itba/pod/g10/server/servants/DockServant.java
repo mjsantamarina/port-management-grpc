@@ -58,7 +58,6 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
     }
 
 
-
     @Override
     public void addCraneToDock(AddCraneToDockRequest request, StreamObserver<AddCraneToDockResponse> responseObserver) {
         Dock dock = dockRepository.getDockByNumber(request.getDockNumber()).orElseThrow(() -> new RuntimeException("Dock not found"));
