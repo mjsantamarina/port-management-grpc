@@ -99,10 +99,10 @@ public class CraneClient {
         // Interactive loop
         Scanner scanner = new Scanner(System.in);
         while (true) {
-            System.out.print("Enter Container ID: ");
             String id = scanner.nextLine().trim();
             if (id.isEmpty()) continue;
             requestObserver.onNext(UnloadContainersRequest.newBuilder().setCraneNumber(craneNumber).setContainerId(id).build());
+            System.out.print("Enter Container ID: ");
             // Server calls onCompleted when end
         }
     }

@@ -22,8 +22,6 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
     }
 
 
-
-
     @Override
     public void addDock(AddDockRequest request, StreamObserver<AddDockResponse> responseObserver){
         int dockNumber = dockRepository.addDock(request.getDockSize());
@@ -39,15 +37,13 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
     public void addCraneToDock(AddCraneToDockRequest request, StreamObserver<AddCraneToDockResponse> responseObserver) {
         Dock dock = dockRepository.getDockByNumber(request.getDockNumber()).orElseThrow(() -> new RuntimeException("Dock not found"));
         Crane crane = dock.addCrane(request.getContainerAmount(), craneRepository.getNextCraneNumber());
+        craneRepository.addCrane(crane);
         responseObserver.onNext(AddCraneToDockResponse.newBuilder()
                 .setCraneNumber(crane.getId()).setLastContainerAmount(Integer.valueOf(0))
                 .setProvidedContainerAmount(request.getContainerAmount()).build()
         );
         responseObserver.onCompleted();
     }
-
-
-
 
 
     @Override

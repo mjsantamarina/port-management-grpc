@@ -28,6 +28,7 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
             public void onNext(UnloadContainersRequest req) {
                 try {
                     Crane crane = craneRepository.getCrane(req.getCraneNumber());
+                    System.out.println("crane number en server"+req.getCraneNumber());
                     if (crane == null) {
                         responseObserver.onError(Status.NOT_FOUND.withDescription("Crane not found").asRuntimeException());
                         return;
