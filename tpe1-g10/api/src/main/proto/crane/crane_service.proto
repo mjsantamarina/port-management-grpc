@@ -35,6 +35,10 @@ message UnloadContainersResponse {
 message CraneStatusResponse {
   utils.CraneStatus crane_status = 1;
   uint32 crane_number = 2;
+  uint32 unloaded_containers = 3;
+  uint32 max_containers = 4;
+  uint32 dock_number = 5;
+  utils.Size dock_size = 6;
 }
 
 

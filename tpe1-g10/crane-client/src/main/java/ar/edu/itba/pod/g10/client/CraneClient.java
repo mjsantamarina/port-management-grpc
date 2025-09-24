@@ -77,7 +77,6 @@ public class CraneClient {
         CountDownLatch latch = new CountDownLatch(1);
         StreamObserver<UnloadContainersRequest> requestObserver = asyncStub.unloadContainers(new StreamObserver<UnloadContainersResponse>() {
 
-
             @Override
             public void onNext(UnloadContainersResponse response) {
                 System.out.println("📦 Unloaded " + response.getContainerId() + " from 🏗️ Crane #" + response.getCraneNumber() + " (" + response.getUnloadedContainers() + "📦) [" + response.getMaxContainers() + "] on 🛟 Dock #" + response.getDockNumber());
@@ -117,7 +116,15 @@ public class CraneClient {
 
     private void handleCheckCrane(int craneNumber) {
         CraneStatusResponse response = blockingStub.getCraneStatus(UInt32Value.of(craneNumber));
-        System.out.println(craneStatusAsString(response.getCraneStatus()) + " 🏗️ Crane #" + response.getCraneNumber());
+        System.out.printf(
+                "%s 🏗️ Crane #%d (%d📦) [%d] on 🛟 Dock #%d (%s)%n",
+                craneStatusAsString(response.getCraneStatus()),
+                response.getCraneNumber(),
+                response.getUnloadedContainers(),
+                response.getMaxContainers(),
+                response.getDockNumber(),
+                response.getDockSize().name().charAt(0));
+
     }
 
     private void handleFixCrane(int craneNumber) {

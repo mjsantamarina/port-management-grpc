@@ -122,6 +122,10 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
         CraneStatusResponse craneStatusResponse = CraneStatusResponse.newBuilder()
                 .setCraneStatus(crane.getStatus())
                 .setCraneNumber(crane.getId())
+                .setUnloadedContainers(crane.getCurrentContainers())
+                .setMaxContainers(crane.getMaxContainers())
+                .setDockNumber(crane.getDock().getNumber())
+                .setDockSize(crane.getDock().getSize())
                 .build();
         responseObserver.onNext(craneStatusResponse);
         responseObserver.onCompleted();
