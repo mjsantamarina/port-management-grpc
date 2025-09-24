@@ -55,7 +55,7 @@ El Cliente de Muelles gestiona las operaciones de muelles incluyendo agregar mue
 
 1. **Navegar al directorio de distribución del cliente de muelles y descromprimir el archivo tpe1-g10-dock-client-2025.2Q-bin.tar.gz:**
    ```bash
-   cd dock-client/target/ && tar -xzf tpe1-g10-server-2025.2Q-bin.tar.gz
+   cd dock-client/target/ && tar -xzf tpe1-g10-dock-client-2025.2Q-bin.tar.gz
    ```
 
 2. **Hacer el script ejecutable:**
@@ -124,27 +124,30 @@ Added 🏗️ Crane #1 (0📦) [10] on 🛟 Dock #1 ()
 ```
 
 #### Alternar Estado del Muelle
-TODO: Cambiar para que sea con open/close en vez de toggle
 Cambia el estado operacional de un muelle (abierto/cerrado).
 
 ```bash
-./dock.sh -DserverAddress=localhost:50051 -Daction=toggleDock -Ddock=<NÚMERO_MUELLE>
+./dock.sh -DserverAddress=localhost:50051 -Daction=openDock -Ddock=<NÚMERO_MUELLE>
+
+./dock.sh -DserverAddress=localhost:50051 -Daction=closeDock -Ddock=<NÚMERO_MUELLE>
 ```
 
 **Parámetros:</u>
 - `serverAddress`: Dirección del servidor y puerto
-- `action`: Debe ser `toggleDock`
+- `action`: Debe ser `openDock` para abrir o `closeDock` para cerrar
 - `dock`: Número del muelle objetivo
 
 **Ejemplos:</u>
 ```bash
 # Alternar estado del muelle #1
-./dock.sh -DserverAddress=localhost:50051 -Daction=toggleDock -Ddock=1
+./dock.sh -DserverAddress=localhost:50051 -Daction=openDock -Ddock=1
+
+./dock.sh -DserverAddress=localhost:50051 -Daction=closeDock -Ddock=1
 ```
 
 **Salida Esperada:</u>
 ```
-OPEN 🛟 Dock #1 (L)
+OPEN 🛟 Dock #1 (S)
 ```
 o bien:
 ```
