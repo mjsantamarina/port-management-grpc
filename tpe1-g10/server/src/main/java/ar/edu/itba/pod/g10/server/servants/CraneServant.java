@@ -138,7 +138,7 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
             responseObserver.onError(Status.NOT_FOUND.withDescription("Crane not found").asRuntimeException());
             return;
         }
-        if (crane.getStatus().equals(CraneStatus.CRANE_STATUS_CLOSED)) {
+        if (crane.getStatus().equals(CraneStatus.CRANE_STATUS_MAINTENANCE)) {
             crane.setCraneStatus(CraneStatus.CRANE_STATUS_OPEN);
             crane.setCurrentContainers(0);
             CraneStatusResponse craneStatusResponse = CraneStatusResponse.newBuilder()
@@ -148,7 +148,7 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
             responseObserver.onNext(craneStatusResponse);
             responseObserver.onCompleted();
         } else {
-            responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is not closed").asRuntimeException());
+            responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is not in maintenance").asRuntimeException());
         }
     }
 }

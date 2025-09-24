@@ -70,36 +70,6 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
         responseObserver.onCompleted();
     }
 
-
-    @Override
-    public void toggleDockStatus(UInt32Value request, StreamObserver<DockStatusResponse> responseObserver){
-        logger.info("toggleDockStatus called for dock number: {}", request.getValue());
-        Dock dock;
-        try {
-            logger.info("Attempting to toggle dock status...");
-            dock = dockRepository.toggleDock(request.getValue());
-            logger.info("Successfully toggled dock. New status: {}, Size: {}", dock.getStatus(), dock.getSize());
-        } catch (Exception e) {
-            logger.error("Error toggling dock status: {}", e.getMessage(), e);
-            responseObserver.onError(
-                    io.grpc.Status.PERMISSION_DENIED
-                            .withDescription(e.getMessage())
-                            .asRuntimeException()
-            );
-            return;
-        }
-        logger.info("Building response...");
-        DockStatusResponse dockStatusResponse = DockStatusResponse.newBuilder()
-                .setDockNumber(dock.getNumber())
-                .setDockSize(dock.getSize())
-                .setDockStatus(dock.getStatus())
-                .build();
-        logger.info("Sending response back to client...");
-        responseObserver.onNext(dockStatusResponse);
-        responseObserver.onCompleted();
-        logger.info("toggleDockStatus completed successfully");
-    }
-
     @Override
     public void openDock(UInt32Value request, StreamObserver<DockStatusResponse> responseObserver) {
         final ReentrantLock repoLock = Locks.SHIP_REPOSITORY_LOCK;
@@ -116,10 +86,9 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
             }
 
             if (dock.getStatus() == DockStatus.DOCK_STATUS_CLOSED) {
-                dockRepository.toggleDock(request.getValue());
+                dockRepository.openDock(dock);
             }
-
-            // ahora sí, con el lock tomado
+            
             CHANGED.signalAll();
 
             DockStatusResponse dockStatusResponse = DockStatusResponse.newBuilder()
@@ -147,7 +116,7 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
             return;
         }
         if(dock.getStatus().equals(DockStatus.DOCK_STATUS_IDLE)){
-            dockRepository.toggleDock(request.getValue());
+            dockRepository.closeDock(dock);
         }
         DockStatusResponse dockStatusResponse = DockStatusResponse.newBuilder()
                 .setDockNumber(dock.getNumber())
