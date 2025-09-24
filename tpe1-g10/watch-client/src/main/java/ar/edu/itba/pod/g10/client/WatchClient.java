@@ -66,7 +66,11 @@ public class WatchClient {
     }
 
     private void handleWatchCrane(int craneNumber) throws InterruptedException {
-        UInt32Value request = UInt32Value.of(craneNumber);
+        WatchCraneRequest request = WatchCraneRequest.newBuilder()
+                .setCraneId(craneNumber)
+                //TODO recibir el nuemero de dock por parametro
+                .setDockId(UInt32Value.of(1)) // Assuming dock ID is 1 for simplicity; adjust as needed
+                .build();
         CountDownLatch latch = new CountDownLatch(1);
         asyncStub.watchCrane(request, new StreamObserver<EventResponse>() {
             @Override
