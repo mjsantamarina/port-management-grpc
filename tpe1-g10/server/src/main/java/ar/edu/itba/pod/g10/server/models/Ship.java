@@ -28,10 +28,11 @@ public class Ship {
         return !containers.isEmpty();
     }
 
-    public void unloadContainer() {
+    public String unloadContainer() {
         if (!containers.isEmpty()) {
-            containers.pollFirst();
+            return containers.pollFirst();
         }
+        return null;
     }
 
     public String getId() {

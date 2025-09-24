@@ -45,16 +45,17 @@ public class DockRepository {
     }
 
 
-    public Dock closeDock(Dock dock){
+    public Dock closeDock(Dock dock, NotificationRepository notificationRepository){
         dock.setStatus(DockStatus.DOCK_STATUS_CLOSED);
         List<Crane> craneList = dock.getCraneList();
         for(Crane crane : craneList){
             crane.setCraneStatus(CraneStatus.CRANE_STATUS_CLOSED);
+            notificationRepository.publishCraneStatus(crane);
         }
         return dock;
     }
 
-    public Dock openDock(Dock dock){
+    public Dock openDock(Dock dock, NotificationRepository notificationRepository){
         dock.setStatus(DockStatus.DOCK_STATUS_IDLE);
         List<Crane> craneList = dock.getCraneList();
         for(Crane crane : craneList){
@@ -62,6 +63,7 @@ public class DockRepository {
                 crane.setCraneStatus(CraneStatus.CRANE_STATUS_MAINTENANCE);
             } else {
                 crane.setCraneStatus(CraneStatus.CRANE_STATUS_OPEN);
+                notificationRepository.publishCraneStatus(crane);
             }
         }
         return dock;
@@ -145,6 +147,4 @@ public class DockRepository {
                 .filter(dock -> dock.getShip() != null && dock.getShip().getId().equals(shipId))
                 .findFirst();
     }
-
-
 }

@@ -8,5 +8,6 @@ public class Locks {
     public static final ReentrantLock SHIP_REPOSITORY_LOCK = new ReentrantLock();
     public static final ReentrantLock SHIP_COUNT_LOCK = new ReentrantLock();
     public static final Condition CHANGED = Locks.SHIP_REPOSITORY_LOCK.newCondition();
-
+    public static final ReentrantLock NOTIFICATIONS_LOCK = new ReentrantLock();
+    public static final Condition NOTIFIABLE_CHANGED = Locks.NOTIFICATIONS_LOCK.newCondition();
 }

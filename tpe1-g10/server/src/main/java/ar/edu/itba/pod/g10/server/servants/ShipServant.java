@@ -4,6 +4,7 @@ import ar.edu.itba.pod.g10.server.locks.Locks;
 import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.g10.server.models.Ship;
 import ar.edu.itba.pod.g10.server.repositories.DockRepository;
+import ar.edu.itba.pod.g10.server.repositories.NotificationRepository;
 import ar.edu.itba.pod.g10.server.repositories.ShipRepository;
 import ar.edu.itba.pod.grpc.dock.DockStatusResponse;
 import ar.edu.itba.pod.grpc.ship.*;
@@ -26,10 +27,12 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
 
     private final ShipRepository shipRepository;
     private final DockRepository dockRepository;
+    private final NotificationRepository notificationRepository;
 
-    public ShipServant(ShipRepository shipRepository, DockRepository dockRepository) {
+    public ShipServant(ShipRepository shipRepository, DockRepository dockRepository, NotificationRepository notificationRepository) {
         this.shipRepository = shipRepository;
         this.dockRepository = dockRepository;
+        this.notificationRepository = notificationRepository;
     }
 
     private static Deque<String> countContainers(String input) {
@@ -99,6 +102,7 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
                     try {
                         if (dockRepository.hasAvailableDock(ship.getSize())) {
                             Dock dock = dockRepository.assignDock(ship);
+                            notificationRepository.publishDockOccupied(dock, ship, dock.getCraneList().stream().map(crane -> crane.getId()).toList());
                             shipRepository.getShipQueue().pollFirst();
                             responseObserver.onNext(DockResponse.newBuilder()
                                     .setShipId(ship.getId())
@@ -150,13 +154,14 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
         repoLock.lock();
         try {
             Dock dock = dockRepository.getDockByNumber(request.getDockNumber()).orElseThrow(() -> new IllegalArgumentException("Dock not found: " + request.getDockNumber()));
-            //Dock dock = dockRepository.getDockByShipId(request.getShipId()).orElseThrow(() -> new RuntimeException("Ship not " + request.getShipId() + " not in crane"));
+            Ship ship = dock.getShip();
             if(dock.getShip()==null || !dock.getShip().equals(request.getShipId())){
                 throw new RuntimeException("Ship not " + request.getShipId() + " not in crane");
             }
             dockLock.lock();
             try {
                 dockRepository.releaseDock(dock.getNumber());
+                notificationRepository.publishShipLeft(dock, ship, dock.getCraneList().stream().map(crane -> crane.getId()).toList());
                 responseObserver.onNext(LeaveDockResponse.newBuilder()
                         .setShipId(request.getShipId())
                         .setDockNumber(dock.getNumber())

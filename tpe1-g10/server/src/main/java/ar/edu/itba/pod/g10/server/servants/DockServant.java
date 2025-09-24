@@ -5,6 +5,7 @@ import ar.edu.itba.pod.g10.server.models.Crane;
 import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.g10.server.repositories.CraneRepository;
 import ar.edu.itba.pod.g10.server.repositories.DockRepository;
+import ar.edu.itba.pod.g10.server.repositories.NotificationRepository;
 import ar.edu.itba.pod.grpc.dock.*;
 import ar.edu.itba.pod.grpc.utils.DockStatus;
 import com.google.protobuf.UInt32Value;
@@ -21,11 +22,12 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
     private static final Logger logger = LoggerFactory.getLogger(DockServant.class);
     private final DockRepository dockRepository;
     private final CraneRepository craneRepository;
+    private final NotificationRepository notificationRepository;
 
-
-    public DockServant(DockRepository dockRepository, CraneRepository craneRepository) {
+    public DockServant(DockRepository dockRepository, CraneRepository craneRepository, NotificationRepository notificationRepository) {
         this.dockRepository = dockRepository;
         this.craneRepository = craneRepository;
+        this.notificationRepository = notificationRepository;
     }
 
 
@@ -86,7 +88,7 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
             }
 
             if (dock.getStatus() == DockStatus.DOCK_STATUS_CLOSED) {
-                dockRepository.openDock(dock);
+                dockRepository.openDock(dock, notificationRepository);
             }
             
             CHANGED.signalAll();
@@ -116,7 +118,7 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
             return;
         }
         if(dock.getStatus().equals(DockStatus.DOCK_STATUS_IDLE)){
-            dockRepository.closeDock(dock);
+            dockRepository.closeDock(dock, notificationRepository);
         }
         DockStatusResponse dockStatusResponse = DockStatusResponse.newBuilder()
                 .setDockNumber(dock.getNumber())
@@ -125,6 +127,5 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
                 .build();
         responseObserver.onNext(dockStatusResponse);
         responseObserver.onCompleted();
-
     }
 }

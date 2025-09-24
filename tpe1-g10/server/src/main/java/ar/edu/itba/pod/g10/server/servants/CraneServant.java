@@ -4,6 +4,7 @@ import ar.edu.itba.pod.g10.server.models.Crane;
 import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.g10.server.models.Ship;
 import ar.edu.itba.pod.g10.server.repositories.CraneRepository;
+import ar.edu.itba.pod.g10.server.repositories.NotificationRepository;
 import ar.edu.itba.pod.grpc.crane.CraneServiceGrpc;
 import ar.edu.itba.pod.grpc.crane.CraneStatusResponse;
 import ar.edu.itba.pod.grpc.crane.UnloadContainersRequest;
@@ -16,9 +17,11 @@ import io.grpc.stub.StreamObserver;
 public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
 
     private final CraneRepository craneRepository;
+    private final NotificationRepository notificationRepository;
 
-    public CraneServant(CraneRepository craneRepository) {
+    public CraneServant(CraneRepository craneRepository, NotificationRepository notificationRepository) {
         this.craneRepository = craneRepository;
+        this.notificationRepository = notificationRepository;
     }
 
     @Override
@@ -45,33 +48,44 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
 
 
                     if (expected == null) {
-                        // no quedan contenedores → termina la descarga
                         responseObserver.onCompleted();
                         return;
                     }
 
 
 
-                    if (crane.needsMainteinance() || crane.getStatus() == CraneStatus.CRANE_STATUS_CLOSED) {
-                        crane.setCraneStatus(CraneStatus.CRANE_STATUS_CLOSED);
-                        responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane needs maintenance").asRuntimeException());
+                    if (crane.getStatus() == CraneStatus.CRANE_STATUS_CLOSED) {
+                        responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is closed").asRuntimeException());
+                        return;
+                    }
+
+                    if(crane.getStatus() == CraneStatus.CRANE_STATUS_MAINTENANCE){
+                        responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is in maintenance").asRuntimeException());
                         return;
                     }
 
                     if (!expected.equals(req.getContainerId())) {
-                        // contenedor fuera de orden → finaliza la operación
                         responseObserver.onCompleted();
                         return;
                     }
 
                     // descarga válida
-                    ship.unloadContainer();
-
+                    String unloaded = ship.unloadContainer();
+                    if(unloaded != null){
+                        notificationRepository.publishUnloaded(crane, unloaded);
+                    }
                     crane.setCurrentContainers(crane.getCurrentContainers() + 1);
                     crane.setCraneStatus(CraneStatus.CRANE_STATUS_UNLOADING);
+                    notificationRepository.publishCraneStatus(crane);
+                    if(crane.needsMainteinance()){
+                        crane.setCraneStatus(CraneStatus.CRANE_STATUS_MAINTENANCE);
+                        notificationRepository.publishCraneStatus(crane);
+                        responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is in maintenance").asRuntimeException());
+                        return;
+                        //TODO ver si hay que terminar la ejecucion o como es.
+                    }
 
                     if(ship.getContainerAmount()==0) {
-                        // no quedan contenedores → termina la descarga
                         responseObserver.onNext(UnloadContainersResponse.newBuilder()
                         .setContainerId(req.getContainerId())
                                 .setCraneNumber(crane.getId())
@@ -140,6 +154,7 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
         }
         if (crane.getStatus().equals(CraneStatus.CRANE_STATUS_MAINTENANCE)) {
             crane.setCraneStatus(CraneStatus.CRANE_STATUS_OPEN);
+            notificationRepository.publishCraneStatus(crane);
             crane.setCurrentContainers(0);
             CraneStatusResponse craneStatusResponse = CraneStatusResponse.newBuilder()
                     .setCraneStatus(crane.getStatus())

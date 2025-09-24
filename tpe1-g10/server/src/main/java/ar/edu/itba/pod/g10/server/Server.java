@@ -2,6 +2,7 @@ package ar.edu.itba.pod.g10.server;
 
 import ar.edu.itba.pod.g10.server.repositories.CraneRepository;
 import ar.edu.itba.pod.g10.server.repositories.DockRepository;
+import ar.edu.itba.pod.g10.server.repositories.NotificationRepository;
 import ar.edu.itba.pod.g10.server.repositories.ShipRepository;
 import ar.edu.itba.pod.g10.server.servants.CraneServant;
 import ar.edu.itba.pod.g10.server.servants.DockServant;
@@ -22,12 +23,13 @@ public class Server {
         DockRepository dockRepository = new DockRepository();
         ShipRepository shipRepository = new ShipRepository();
         CraneRepository craneRepository = new CraneRepository();
+        NotificationRepository notificationRepository = new NotificationRepository();
         int port = 50051;
         io.grpc.Server server = ServerBuilder.forPort(port)
-                .addService(new DockServant(dockRepository, craneRepository))
-                .addService(new ShipServant(shipRepository, dockRepository))
-                .addService(new CraneServant(craneRepository))
-                .addService(new NotifyServant(craneRepository))
+                .addService(new DockServant(dockRepository, craneRepository, notificationRepository))
+                .addService(new ShipServant(shipRepository, dockRepository, notificationRepository))
+                .addService(new CraneServant(craneRepository, notificationRepository))
+                .addService(new NotifyServant(craneRepository,notificationRepository))
                 .addService(new ReportServant(shipRepository, craneRepository))
                 .build();
         server.start();
