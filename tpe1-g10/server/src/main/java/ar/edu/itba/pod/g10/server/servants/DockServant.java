@@ -60,17 +60,7 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
     }
 
 
-    @Override
-    public void addCraneToDock(AddCraneToDockRequest request, StreamObserver<AddCraneToDockResponse> responseObserver) {
-        Dock dock = dockRepository.getDockByNumber(request.getDockNumber()).orElseThrow(() -> new RuntimeException("Dock not found"));
-        Crane crane = dock.addCrane(request.getContainerAmount(), craneRepository.getNextCraneNumber());
-        craneRepository.addCrane(crane);
-        responseObserver.onNext(AddCraneToDockResponse.newBuilder()
-                .setCraneNumber(crane.getId()).setLastContainerAmount(Integer.valueOf(0)).setDockSize(dock.getSize())
-                .setProvidedContainerAmount(request.getContainerAmount()).build()
-        );
-        responseObserver.onCompleted();
-    }
+
 
     @Override
     public void openDock(UInt32Value request, StreamObserver<DockStatusResponse> responseObserver) {
@@ -108,6 +98,20 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
             repoLock.unlock();
         }
     }
+
+
+    @Override
+    public void addCraneToDock(AddCraneToDockRequest request, StreamObserver<AddCraneToDockResponse> responseObserver) {
+        Dock dock = dockRepository.getDockByNumber(request.getDockNumber()).orElseThrow(() -> new RuntimeException("Dock not found"));
+        Crane crane = dock.addCrane(request.getContainerAmount(), craneRepository.getNextCraneNumber());
+        craneRepository.addCrane(crane);
+        responseObserver.onNext(AddCraneToDockResponse.newBuilder()
+                .setCraneNumber(crane.getId()).setLastContainerAmount(Integer.valueOf(0)).setDockSize(dock.getSize())
+                .setProvidedContainerAmount(request.getContainerAmount()).build()
+        );
+        responseObserver.onCompleted();
+    }
+
 
 
     @Override

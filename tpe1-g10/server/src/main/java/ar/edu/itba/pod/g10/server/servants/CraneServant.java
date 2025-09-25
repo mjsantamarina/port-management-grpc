@@ -126,7 +126,7 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
 
             @Override
             public void onError(Throwable t) {
-                // TODO: loggear si hace falta
+                responseObserver.onError(t);
             }
 
             @Override

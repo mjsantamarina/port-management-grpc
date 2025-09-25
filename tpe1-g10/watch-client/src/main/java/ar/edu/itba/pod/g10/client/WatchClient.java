@@ -8,7 +8,6 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.CountDownLatch;
 
 public class WatchClient {
@@ -21,13 +20,15 @@ public class WatchClient {
         this.asyncStub = NotifyServiceGrpc.newStub(channel);
     }
 
+
     public static void main(String[] args) throws InterruptedException {
         WatchClientParams params;
         try {
             params = WatchClientParams.getParams(
                     System.getProperty("serverAddress"),
                     System.getProperty("action"),
-                    System.getProperty("crane")
+                    System.getProperty("crane"),
+                    System.getProperty("dock")
             );
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
@@ -48,11 +49,12 @@ public class WatchClient {
         }
     }
 
+
     public void run(WatchClientParams params) throws InterruptedException {
         try {
             switch (params.getAction()) {
                 case "watchCrane":
-                    handleWatchCrane(params.getCraneNumber().orElseThrow());
+                    handleWatchCrane(params.getCraneNumber().orElseThrow(), params.getDockNumber().orElseThrow());
                     break;
                 case "stopWatch":
                     handleStopWatch(params.getCraneNumber().orElseThrow());
@@ -65,11 +67,10 @@ public class WatchClient {
         }
     }
 
-    private void handleWatchCrane(int craneNumber) throws InterruptedException {
+    private void handleWatchCrane(int craneNumber, int dockNumber) throws InterruptedException {
         WatchCraneRequest request = WatchCraneRequest.newBuilder()
                 .setCraneId(craneNumber)
-                //TODO recibir el nuemero de dock por parametro
-                .setDockId(UInt32Value.of(1)) // Assuming dock ID is 1 for simplicity; adjust as needed
+                .setDockId(UInt32Value.of(dockNumber)) // Assuming dock ID is 1 for simplicity; adjust as needed
                 .build();
         CountDownLatch latch = new CountDownLatch(1);
         asyncStub.watchCrane(request, new StreamObserver<EventResponse>() {

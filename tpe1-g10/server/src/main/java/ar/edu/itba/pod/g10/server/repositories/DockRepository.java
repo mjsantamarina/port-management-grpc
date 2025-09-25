@@ -134,17 +134,7 @@ public class DockRepository {
     }
 
 
-    //TODO: CHECKEAR ESTO
-    public Optional<Ship> getAttachedShipById(String shipId) {
-        return docksBySize.values().stream().flatMap(Collection::stream)
-                .filter(dock -> dock.getShip() != null && dock.getShip().getId().equals(shipId))
-                .map(Dock::getShip)
-                .findFirst();
-    }
 
-    public Optional<Dock> getDockByShipId(String shipId) {
-        return docksBySize.values().stream().flatMap(Collection::stream)
-                .filter(dock -> dock.getShip() != null && dock.getShip().getId().equals(shipId))
-                .findFirst();
-    }
+
+
 }

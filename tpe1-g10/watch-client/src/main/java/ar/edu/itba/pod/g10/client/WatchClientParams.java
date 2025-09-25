@@ -10,15 +10,17 @@ public class WatchClientParams {
     private static final List<String> VALID_ACTIONS = List.of("watchCrane", "stopWatch");
 
     private Optional<Integer> craneNumber;
+    private Optional<Integer> dockNumber;
 
-    private WatchClientParams(String address, String port, String action, Optional<Integer> craneNumber) {
+    private WatchClientParams(String address, String port, String action, Optional<Integer> craneNumber, Optional<Integer> dockNumber) {
         this.address = address;
         this.port = port;
         this.action = action;
         this.craneNumber = craneNumber;
+        this.dockNumber = dockNumber;
     }
 
-    public static WatchClientParams getParams(String addressAndPort, String action, String crane) {
+    public static WatchClientParams getParams(String addressAndPort, String action, String crane, String dock) {
         if (addressAndPort == null || addressAndPort.isEmpty()) {
             throw new IllegalArgumentException("A server address must be provided.");
         }
@@ -32,7 +34,8 @@ public class WatchClientParams {
                 addressAndPortParts.get(0),
                 addressAndPortParts.size() > 1 ? addressAndPortParts.get(1) : "50051",
                 action,
-                Optional.ofNullable(crane).map(Integer::parseInt)
+                Optional.ofNullable(crane).map(Integer::parseInt),
+                Optional.ofNullable(dock).map(Integer::parseInt)
         );
     }
 
@@ -50,5 +53,9 @@ public class WatchClientParams {
 
     public Optional<Integer> getCraneNumber() {
         return craneNumber;
+    }
+
+    public Optional<Integer> getDockNumber() {
+        return dockNumber;
     }
 }

@@ -108,7 +108,6 @@ public class ManifestClient {
             return; // No crea file
         }
         List<String> lines = unloads.stream()
-                // TODO: fix getUnloadedSinceMaintenance() da siempre 0
                 .map(unload -> "📦 " + unload.getContainerId() + " unloaded from 🏗️ Crane #" + unload.getCraneNumber() + " (" + unload.getUnloadedSinceMaintenance() + "📦) [" + unload.getMaxContainers() + "] on 🛟 Dock #" + unload.getDockNumber() + " (" + sizeAsString(unload.getDockSize()) + ")")
                 .collect(Collectors.toList());
         try {
