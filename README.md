@@ -535,11 +535,18 @@ cd dock-client/target/tpe1-g10-dock-client-2025.2Q/
 
 ## Pruebas Realizadas
 **Stress Tests:**
-Para correr los stress test individuales, navegar a cada cliente y ejecutar:
+Para correr los stress test individuales:
+1. Navegar a tpe1-g10. Desde la raíz del proyecto correr: `cd tpe1-g10`
+2. Parado tpe1-g10 compilar con mvn: `mvn clean install`
+3. Correr el servidor con: 
 ```bash
-./src/main/assembly/overlay/compile.sh
-./src/main/assembly/overlay/<client>StressTest.sh
+chmod +x server/src/main/assembly/overlay/compile-and-run.sh && ./server/src/main/assembly/overlay/compile-and-run.sh
 ```
+4. Correr el cliente que se desee testear (dock, ship, crane, watch o manifest) con:
+```bash
+chmod +x ./src/main/assembly/overlay/<client>StressTest.sh && ./src/main/assembly/overlay/<client>StressTest.sh
+```
+donde `<client>` es el cliente que se desea testear (dock, ship, crane, watch o manifest).
 
 ## Correcciones y Mejoras Implementadas
 

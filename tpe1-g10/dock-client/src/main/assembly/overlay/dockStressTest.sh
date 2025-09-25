@@ -12,8 +12,14 @@ run_command() {
     sleep $PAUSE
 }
 
-cd target/tpe1-g10-dock-client-2025.2Q && chmod +x dock.sh
+if [ ! -d "dock-client/target/tpe1-g10-dock-client-2025.2Q" ]; then
+  echo "---> Unpacking tpe1-g10-dock-client-2025.2Q..."
+  (cd "dock-client/target" && tar -xzf "tpe1-g10-dock-client-2025.2Q-bin.tar.gz") || exit 1
+fi
+chmod +x "dock-client/target/tpe1-g10-dock-client-2025.2Q/dock.sh"
 
+DOCK_DIR="dock-client/target/tpe1-g10-dock-client-2025.2Q"
+cd ${DOCK_DIR}
 echo "==== Agregando 10 muelles (dock) ===="
 for i in $(seq 1 10); do
     run_command "sh dock.sh -DserverAddress=localhost:50051 -Daction=addDock -Dsize=$(echo SML | cut -c$(( (i-1)%3 + 1 )))"
