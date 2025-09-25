@@ -3,37 +3,44 @@ package ar.edu.itba.pod.g10.server.repositories;
 import ar.edu.itba.pod.g10.server.models.Crane;
 import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.g10.server.models.Ship;
+import ar.edu.itba.pod.grpc.notify.EventResponse;
+import io.grpc.stub.ServerCallStreamObserver;
 
 import java.util.Collection;
 import java.util.Set;
-import java.util.concurrent.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class NotificationRepository {
 
-    private final ConcurrentHashMap<Integer, CopyOnWriteArraySet<BlockingQueue<String>>> subsByCrane =
+    private final ConcurrentHashMap<Integer, CopyOnWriteArraySet<ServerCallStreamObserver<EventResponse>>> observersByCrane =
             new ConcurrentHashMap<>();
 
-    public BlockingQueue<String> subscribeCrane(int craneId) {
-        BlockingQueue<String> q = new LinkedBlockingQueue<>();
-        subsByCrane.computeIfAbsent(craneId, k -> new CopyOnWriteArraySet<>()).add(q);
-        return q;
+    public void addObserver(int craneId, ServerCallStreamObserver<EventResponse> obs) {
+        observersByCrane.computeIfAbsent(craneId, k -> new CopyOnWriteArraySet<>()).add(obs);
     }
 
-    public void unsubscribeCrane(int craneId, BlockingQueue<String> q) {
-        Set<BlockingQueue<String>> set = subsByCrane.get(craneId);
+    public void removeObserver(int craneId, ServerCallStreamObserver<EventResponse> obs) {
+        Set<ServerCallStreamObserver<EventResponse>> set = observersByCrane.get(craneId);
         if (set != null) {
-            set.remove(q);
-            if (set.isEmpty()) subsByCrane.remove(craneId, set);
+            set.remove(obs);
+            if (set.isEmpty()) observersByCrane.remove(craneId, set);
         }
     }
 
     public void publishToCrane(int craneId, String line) {
-        Set<BlockingQueue<String>> set = subsByCrane.get(craneId);
+        Set<ServerCallStreamObserver<EventResponse>> set = observersByCrane.get(craneId);
         if (set == null || set.isEmpty()) return;
-        for (BlockingQueue<String> q : set) {
-            q.offer(line);
+        EventResponse ev = EventResponse.newBuilder().setEventMessage(line).build();
+        for (ServerCallStreamObserver<EventResponse> s : set) {
+            if (!s.isCancelled()) s.onNext(ev);
+        }
+    }
+
+    public void publishToCranes(Collection<Integer> craneIds, String line) {
+        if (craneIds == null || craneIds.isEmpty()) return;
+        for (Integer id : craneIds) {
+            if (id != null) publishToCrane(id, line);
         }
     }
 
@@ -67,13 +74,6 @@ public class NotificationRepository {
 
     public void publishShipLeft(Dock d, Ship s, Collection<Integer> craneIds) {
         publishToCranes(craneIds, lineShipLeft(d, s));
-    }
-
-    public void publishToCranes(Collection<Integer> craneIds, String line) {
-        if (craneIds == null || craneIds.isEmpty()) return;
-        for (Integer id : craneIds) {
-            if (id != null) publishToCrane(id, line);
-        }
     }
 
     private static String lineStartedWatch(Crane c) {
