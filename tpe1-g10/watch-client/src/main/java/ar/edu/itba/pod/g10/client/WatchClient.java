@@ -56,7 +56,7 @@ public class WatchClient {
                 case "watchCrane":
                     handleWatchCrane(params.getCraneNumber().orElseThrow(), params.getDockNumber().orElseThrow());
                     break;
-                case "stopWatch":
+                case "stop":
                     handleStopWatch(params.getCraneNumber().orElseThrow());
                     break;
             }

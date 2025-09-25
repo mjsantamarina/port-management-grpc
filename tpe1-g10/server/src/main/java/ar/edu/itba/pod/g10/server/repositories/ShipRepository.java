@@ -64,4 +64,8 @@ public class ShipRepository {
         }
         return pendingShips;
     }
+
+    public void removeShip(Ship ship) {
+        shipMap.remove(ship.getId());
+    }
 }

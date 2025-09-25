@@ -151,28 +151,18 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
 
     @Override
     public void leaveDock(LeaveDockRequest request, StreamObserver<LeaveDockResponse> responseObserver) {
-        try {
+            Ship ship = shipRepository.getShip(request.getShipId());
             Dock dock = dockRepository.getDockByNumber(request.getDockNumber())
                     .orElseThrow(() -> new IllegalArgumentException("Dock not found: " + request.getDockNumber()));
-            Ship ship = dock.getShip();
-            if (ship == null || !ship.getId().equals(request.getShipId())) {
-                responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Ship " + request.getShipId() + " not in dock").asRuntimeException());
-                return;
-            }
-
             synchronized (ship) {
                 Ship current = dock.getShip();
-                if (current == null || !current.getId().equals(request.getShipId())) {
+                if (ship == null || !current.getId().equals(request.getShipId())) {
                     responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Ship " + request.getShipId() + " not in dock").asRuntimeException());
                     return;
                 }
 
-                Locks.DOCK_LOCK.lock();
-                try {
-                    dockRepository.releaseDock(dock.getNumber());
-                } finally {
-                    Locks.DOCK_LOCK.unlock();
-                }
+                dockRepository.releaseDock(dock.getNumber());
+                shipRepository.removeShip(ship);
 
                 notifier.execute(() -> notificationRepository.publishShipLeft(
                         dock,
@@ -184,16 +174,10 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
                         .setShipId(request.getShipId())
                         .setDockNumber(dock.getNumber())
                         .setDockSize(dock.getSize())
+                        .setShipSize(ship.getSize())
                         .build());
                 responseObserver.onCompleted();
             }
-        } catch (IllegalArgumentException e) {
-            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
-        } catch (IllegalStateException e) {
-            responseObserver.onError(Status.FAILED_PRECONDITION.withDescription(e.getMessage()).asRuntimeException());
-        } catch (Exception e) {
-            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
-        }
     }
 
 

@@ -7,7 +7,7 @@ public class WatchClientParams {
     private String address;
     private String port;
     private String action;
-    private static final List<String> VALID_ACTIONS = List.of("watchCrane", "stopWatch");
+    private static final List<String> VALID_ACTIONS = List.of("watchCrane", "stop");
 
     private Optional<Integer> craneNumber;
     private Optional<Integer> dockNumber;
@@ -26,7 +26,7 @@ public class WatchClientParams {
         }
 
         if (action == null || action.isEmpty() || !VALID_ACTIONS.contains(action)) {
-            throw new IllegalArgumentException("The action provided must be one of the following: \"watchCrane\" or \"stopWatch\".");
+            throw new IllegalArgumentException("The action provided must be one of the following: \"watchCrane\" or \"stop\".");
         }
 
         List<String> addressAndPortParts = List.of(addressAndPort.split(":"));

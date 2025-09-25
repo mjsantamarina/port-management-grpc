@@ -61,6 +61,8 @@ public class NotifyServant extends NotifyServiceGrpc.NotifyServiceImplBase {
 
     @Override
     public void stopWatch(UInt32Value request, StreamObserver<Empty> responseObserver) {
+        Crane crane = craneRepository.getCrane(request.getValue());
+        notificationRepository.removeObserversForCrane(crane);
         responseObserver.onNext(Empty.getDefaultInstance());
         responseObserver.onCompleted();
     }

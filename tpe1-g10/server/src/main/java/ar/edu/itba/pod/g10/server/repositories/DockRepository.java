@@ -134,20 +134,17 @@ public class DockRepository {
 
 
     public void releaseDock(int dockNumber) {
-        Locks.DOCK_LOCK.lock();
-        try {
-            Dock dock = getDockByNumber(dockNumber).orElseThrow(() -> new IllegalArgumentException("Dock not found: " + dockNumber));
-            if (dock.getStatus() != DockStatus.DOCK_STATUS_BUSY) {
-                throw new IllegalStateException("Dock " + dockNumber + " is not busy");
-            }
-            if(dock.getShip().hasContainers()){
-                throw new IllegalStateException("Ship still has containers to unload");
-            }
-            dock.setStatus(DockStatus.DOCK_STATUS_IDLE);
-            dock.setShip(null);
-        } finally {
-            Locks.DOCK_LOCK.unlock();
+        Dock dock = getDockByNumber(dockNumber).orElseThrow(() -> new IllegalArgumentException("Dock not found: " + dockNumber));
+        if (dock.getStatus() != DockStatus.DOCK_STATUS_BUSY) {
+            throw new IllegalStateException("Dock " + dockNumber + " is not busy");
         }
+        if(dock.getShip().hasContainers()){
+            throw new IllegalStateException("Ship still has containers to unload");
+        }
+        dock.setStatus(DockStatus.DOCK_STATUS_IDLE);
+
+        dock.setShip(null);
+
     }
 
 
