@@ -8,10 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Locks {
     public static final ReentrantLock DOCK_LOCK = new ReentrantLock();
     public static final ReentrantLock SHIP_REPOSITORY_LOCK = new ReentrantLock();
-    public static final ReentrantLock SHIP_COUNT_LOCK = new ReentrantLock();
     public static final Condition CHANGED = SHIP_REPOSITORY_LOCK.newCondition();
-    public static final ReentrantLock NOTIFICATIONS_LOCK = new ReentrantLock();
-    public static final Condition NOTIFIABLE_CHANGED = NOTIFICATIONS_LOCK.newCondition();
 
     private static final ConcurrentHashMap<Integer, AtomicBoolean> CRANE_IN_USE = new ConcurrentHashMap<>();
 

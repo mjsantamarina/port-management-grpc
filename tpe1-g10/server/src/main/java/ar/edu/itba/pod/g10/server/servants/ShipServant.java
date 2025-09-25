@@ -151,29 +151,41 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
 
     @Override
     public void leaveDock(LeaveDockRequest request, StreamObserver<LeaveDockResponse> responseObserver) {
-        final java.util.concurrent.locks.ReentrantLock repoLock = Locks.SHIP_REPOSITORY_LOCK;
-        final java.util.concurrent.locks.ReentrantLock dockLock = Locks.DOCK_LOCK;
-        final Condition CHANGED = Locks.CHANGED;
-        repoLock.lock();
         try {
-            Dock dock = dockRepository.getDockByNumber(request.getDockNumber()).orElseThrow(() -> new IllegalArgumentException("Dock not found: " + request.getDockNumber()));
+            Dock dock = dockRepository.getDockByNumber(request.getDockNumber())
+                    .orElseThrow(() -> new IllegalArgumentException("Dock not found: " + request.getDockNumber()));
             Ship ship = dock.getShip();
-            if(dock.getShip()==null || !dock.getShip().equals(request.getShipId())){
-                throw new RuntimeException("Ship not " + request.getShipId() + " not in Dock");
+            if (ship == null || !ship.getId().equals(request.getShipId())) {
+                responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Ship " + request.getShipId() + " not in dock").asRuntimeException());
+                return;
             }
-            dockLock.lock();
-            try {
-                dockRepository.releaseDock(dock.getNumber());
-                notifier.execute(()->notificationRepository.publishShipLeft(dock, ship, dock.getCraneList().stream().map(crane -> crane.getId()).toList()));
+
+            synchronized (ship) {
+                Ship current = dock.getShip();
+                if (current == null || !current.getId().equals(request.getShipId())) {
+                    responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Ship " + request.getShipId() + " not in dock").asRuntimeException());
+                    return;
+                }
+
+                Locks.DOCK_LOCK.lock();
+                try {
+                    dockRepository.releaseDock(dock.getNumber());
+                } finally {
+                    Locks.DOCK_LOCK.unlock();
+                }
+
+                notifier.execute(() -> notificationRepository.publishShipLeft(
+                        dock,
+                        ship,
+                        dock.getCraneList().stream().map(crane -> crane.getId()).toList()
+                ));
+
                 responseObserver.onNext(LeaveDockResponse.newBuilder()
                         .setShipId(request.getShipId())
                         .setDockNumber(dock.getNumber())
                         .setDockSize(dock.getSize())
                         .build());
                 responseObserver.onCompleted();
-                CHANGED.signalAll();
-            } finally {
-                dockLock.unlock();
             }
         } catch (IllegalArgumentException e) {
             responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
@@ -181,11 +193,9 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
             responseObserver.onError(Status.FAILED_PRECONDITION.withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
             responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
-        } finally {
-            repoLock.unlock();
         }
-
     }
+
 
     private static int shipsAhead(Deque<Ship> q, Ship s) {
         int i = 0;

@@ -166,18 +166,20 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
             responseObserver.onError(Status.NOT_FOUND.withDescription("Crane not found").asRuntimeException());
             return;
         }
-        if (crane.getStatus().equals(CraneStatus.CRANE_STATUS_MAINTENANCE)) {
-            crane.setCraneStatus(CraneStatus.CRANE_STATUS_OPEN);
-            crane.setCurrentContainers(0);
-            notifier.execute(()->notificationRepository.publishCraneStatus(crane));
-            CraneStatusResponse craneStatusResponse = CraneStatusResponse.newBuilder()
-                    .setCraneStatus(crane.getStatus())
-                    .setCraneNumber(crane.getId())
-                    .build();
-            responseObserver.onNext(craneStatusResponse);
-            responseObserver.onCompleted();
-        } else {
-            responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is not in maintenance").asRuntimeException());
+        synchronized (crane) {
+            if (crane.getStatus().equals(CraneStatus.CRANE_STATUS_MAINTENANCE)) {
+                crane.setCraneStatus(CraneStatus.CRANE_STATUS_OPEN);
+                crane.setCurrentContainers(0);
+                notifier.execute(()->notificationRepository.publishCraneStatus(crane));
+                CraneStatusResponse craneStatusResponse = CraneStatusResponse.newBuilder()
+                        .setCraneStatus(crane.getStatus())
+                        .setCraneNumber(crane.getId())
+                        .build();
+                responseObserver.onNext(craneStatusResponse);
+                responseObserver.onCompleted();
+            } else {
+                responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is not in maintenance").asRuntimeException());
+            }
         }
     }
 }
