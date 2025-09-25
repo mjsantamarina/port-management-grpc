@@ -3,6 +3,7 @@ package ar.edu.itba.pod.g10.server.repositories;
 import ar.edu.itba.pod.g10.server.models.Crane;
 import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.g10.server.models.Ship;
+import ar.edu.itba.pod.grpc.utils.CraneStatus;
 
 import java.util.Collection;
 import java.util.Set;
@@ -78,14 +79,14 @@ public class NotificationRepository {
 
     private static String lineStartedWatch(Crane c) {
         Dock d = c.getDock();
-        return c.getStatus() + " 🏗️ Crane #" + c.getId() + " (" + c.getCurrentContainers() + "📦) [" +
+        return craneStatusAsString(c.getStatus()) + " 🏗️ Crane #" + c.getId() + " (" + c.getCurrentContainers() + "📦) [" +
                 c.getMaxContainers() + "] on 🛟 Dock #" + d.getNumber() + " (" +
                 d.getSize().name().charAt(0) + ") started watch";
     }
 
     private static String lineCraneStatus(Crane c) {
         Dock d = c.getDock();
-        return c.getStatus() + " 🏗️ Crane #" + c.getId() + " (" + c.getCurrentContainers() + "📦) [" +
+        return craneStatusAsString(c.getStatus()) + " 🏗️ Crane #" + c.getId() + " (" + c.getCurrentContainers() + "📦) [" +
                 c.getMaxContainers() + "] on 🛟 Dock #" + d.getNumber() + " (" +
                 d.getSize().name().charAt(0) + ")";
     }
@@ -118,5 +119,12 @@ public class NotificationRepository {
     private static String lineShipLeft(Dock d, Ship s) {
         return "⚓ " + s.getId() + " (" + s.getSize().name().charAt(0) + ") (" + s.getContainerAmount() +
                 "📦) left 🛟 Dock #" + d.getNumber() + " (" + d.getSize().name().charAt(0) + ")";
+    }
+
+    private static String craneStatusAsString(CraneStatus status) {
+        if (status == CraneStatus.CRANE_STATUS_UNLOADING) return "UNLOADING";
+        if (status == CraneStatus.CRANE_STATUS_CLOSED) return "CLOSED";
+        if (status == CraneStatus.CRANE_STATUS_OPEN) return "OPEN";
+        return "";
     }
 }

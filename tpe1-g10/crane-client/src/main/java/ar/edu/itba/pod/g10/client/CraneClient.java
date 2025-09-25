@@ -129,7 +129,7 @@ public class CraneClient {
 
     private void handleFixCrane(int craneNumber) {
         CraneStatusResponse response = blockingStub.fixCrane(UInt32Value.of(craneNumber));
-        System.out.println("OPEN 🏗️ Crane #" + response.getCraneNumber() + " (0📦) [" + "max" + "] on 🛟 Dock # " + "dock" + " (S)");
+        System.out.println("OPEN 🏗️ Crane #" + response.getCraneNumber() + " (0📦) [" + response.getMaxContainers() + "] on 🛟 Dock # " + "dock" + " (S)");
     }
 
     private String craneStatusAsString(CraneStatus status) {

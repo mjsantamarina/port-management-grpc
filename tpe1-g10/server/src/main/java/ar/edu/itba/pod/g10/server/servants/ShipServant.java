@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -28,11 +29,13 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
     private final ShipRepository shipRepository;
     private final DockRepository dockRepository;
     private final NotificationRepository notificationRepository;
+    private final ExecutorService notifier;
 
-    public ShipServant(ShipRepository shipRepository, DockRepository dockRepository, NotificationRepository notificationRepository) {
+    public ShipServant(ShipRepository shipRepository, DockRepository dockRepository, NotificationRepository notificationRepository, ExecutorService notifier) {
         this.shipRepository = shipRepository;
         this.dockRepository = dockRepository;
         this.notificationRepository = notificationRepository;
+        this.notifier = notifier;
     }
 
     private static Deque<String> countContainers(String input) {
@@ -102,7 +105,7 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
                     try {
                         if (dockRepository.hasAvailableDock(ship.getSize())) {
                             Dock dock = dockRepository.assignDock(ship);
-                            notificationRepository.publishDockOccupied(dock, ship, dock.getCraneList().stream().map(crane -> crane.getId()).toList());
+                            notifier.execute(()->notificationRepository.publishDockOccupied(dock, ship, dock.getCraneList().stream().map(crane -> crane.getId()).toList()));
                             shipRepository.getShipQueue().pollFirst();
                             responseObserver.onNext(DockResponse.newBuilder()
                                     .setShipId(ship.getId())
@@ -161,7 +164,7 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
             dockLock.lock();
             try {
                 dockRepository.releaseDock(dock.getNumber());
-                notificationRepository.publishShipLeft(dock, ship, dock.getCraneList().stream().map(crane -> crane.getId()).toList());
+                notifier.execute(()->notificationRepository.publishShipLeft(dock, ship, dock.getCraneList().stream().map(crane -> crane.getId()).toList()));
                 responseObserver.onNext(LeaveDockResponse.newBuilder()
                         .setShipId(request.getShipId())
                         .setDockNumber(dock.getNumber())

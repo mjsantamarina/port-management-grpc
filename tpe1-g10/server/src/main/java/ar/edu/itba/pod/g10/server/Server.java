@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     private static Logger logger = LoggerFactory.getLogger(Server.class);
@@ -22,11 +24,16 @@ public class Server {
         CraneRepository craneRepository = new CraneRepository();
         NotificationRepository notificationRepository = new NotificationRepository();
         ContainerRepository containerRepository = new ContainerRepository();
+        ExecutorService notifier = Executors.newSingleThreadExecutor(r -> {
+                    Thread t = new Thread(r, "notifications-dispatcher");
+                    t.setDaemon(true);
+                    return t;
+                });
         int port = 50051;
         io.grpc.Server server = ServerBuilder.forPort(port)
                 .addService(new DockServant(dockRepository, craneRepository, notificationRepository))
-                .addService(new ShipServant(shipRepository, dockRepository, notificationRepository))
-                .addService(new CraneServant(craneRepository, notificationRepository,containerRepository))
+                .addService(new ShipServant(shipRepository, dockRepository, notificationRepository,notifier))
+                .addService(new CraneServant(craneRepository, notificationRepository,containerRepository, notifier))
                 .addService(new NotifyServant(craneRepository,notificationRepository))
                 .addService(new ReportServant(shipRepository, craneRepository, containerRepository))
                 .build();
