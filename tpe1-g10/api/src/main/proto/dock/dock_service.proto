@@ -14,6 +14,8 @@ service DockService {
   rpc AddDock(AddDockRequest) returns (AddDockResponse);
   rpc AddCraneToDock(AddCraneToDockRequest) returns (AddCraneToDockResponse);
   rpc ToggleDockStatus(google.protobuf.UInt32Value) returns (DockStatusResponse);
+  rpc openDock(google.protobuf.UInt32Value) returns (DockStatusResponse);
+  rpc closeDock(google.protobuf.UInt32Value) returns (DockStatusResponse);
 }
 
 message AddDockRequest {
@@ -36,13 +38,15 @@ message AddCraneToDockResponse {
   uint32 crane_number = 1;
   uint32 last_container_amount = 2;
   uint32 provided_container_amount = 3;
-  AddCraneToDockResponse status = 4;
-
+  DockStatusResponse status = 4;
 }
 
 message DockStatusResponse {
   utils.DockStatus dock_status = 1;
   uint32 dock_number = 2;
   utils.Size dock_size = 3;
+  string ship_id = 4;
+  utils.Size ship_size = 5;
+  uint32 containers_left = 6;
 }
 

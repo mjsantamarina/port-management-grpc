@@ -21,6 +21,7 @@ public class CraneRepository {
 
 
     public int getNextCraneNumber(){
+        System.out.println("Next crane number: " + (craneMap.size() + 1));
         return craneMap.size() + 1;
     }
 

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+import "utils/utils_type.proto";
+
+package notify;
+
+option java_package = "ar.edu.itba.pod.grpc.notify";
+option java_outer_classname = "NotifyServiceModel";
+option java_multiple_files = true;
+
+service NotifyService {
+  rpc WatchCrane(WatchCraneRequest) returns (stream EventResponse);
+  rpc StopWatch(google.protobuf.UInt32Value) returns (google.protobuf.Empty);
+}
+
+message EventResponse {
+  string event_message = 1; // Mensaje formateado con emojis, e.g., "OPEN 🏗️ Crane #1 (0📦) [10] on 🛟 Dock #1 (S)"
+}
+
+message WatchCraneRequest {
+  uint32 crane_id = 1; // ID de la grúa a monitorear
+  google.protobuf.UInt32Value dock_id = 2; // ID del muelle a monitorear (opcional)
+}

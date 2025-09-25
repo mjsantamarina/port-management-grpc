@@ -44,6 +44,14 @@ public class Crane {
         this.craneStatus = craneStatus;
     }
 
+    public CraneStatus getCraneStatus() {
+        return craneStatus;
+    }
+
+    public int getMaxContainers() {
+        return maxContainers;
+    }
+
     public CraneStatus getStatus() {
         return craneStatus;
     }

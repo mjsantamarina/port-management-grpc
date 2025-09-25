@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>ar.edu.itba.pod.g10</groupId>
   <artifactId>tpe1-g10-parent</artifactId>
@@ -10,7 +9,11 @@
   <modules>
     <module>api</module>
     <module>server</module>
-    <module>client</module>
+    <module>dock-client</module>
+    <module>ship-client</module>
+    <module>crane-client</module>
+    <module>watch-client</module>
+    <module>manifest-client</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -56,7 +59,8 @@
         <artifactId>grpc-services</artifactId>
         <version>${grpc.version}</version>
       </dependency>
-      <dependency> <!-- necessary for Java 9+ -->
+      <dependency>
+        <!-- necessary for Java 9+ -->
         <groupId>org.apache.tomcat</groupId>
         <artifactId>annotations-api</artifactId>
         <version>6.0.53</version>
