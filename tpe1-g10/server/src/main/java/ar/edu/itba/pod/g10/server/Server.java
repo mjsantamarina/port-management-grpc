@@ -1,9 +1,6 @@
 package ar.edu.itba.pod.g10.server;
 
-import ar.edu.itba.pod.g10.server.repositories.CraneRepository;
-import ar.edu.itba.pod.g10.server.repositories.DockRepository;
-import ar.edu.itba.pod.g10.server.repositories.NotificationRepository;
-import ar.edu.itba.pod.g10.server.repositories.ShipRepository;
+import ar.edu.itba.pod.g10.server.repositories.*;
 import ar.edu.itba.pod.g10.server.servants.CraneServant;
 import ar.edu.itba.pod.g10.server.servants.DockServant;
 import ar.edu.itba.pod.g10.server.servants.NotifyServant;
@@ -24,13 +21,14 @@ public class Server {
         ShipRepository shipRepository = new ShipRepository();
         CraneRepository craneRepository = new CraneRepository();
         NotificationRepository notificationRepository = new NotificationRepository();
+        ContainerRepository containerRepository = new ContainerRepository();
         int port = 50051;
         io.grpc.Server server = ServerBuilder.forPort(port)
                 .addService(new DockServant(dockRepository, craneRepository, notificationRepository))
                 .addService(new ShipServant(shipRepository, dockRepository, notificationRepository))
-                .addService(new CraneServant(craneRepository, notificationRepository))
+                .addService(new CraneServant(craneRepository, notificationRepository,containerRepository))
                 .addService(new NotifyServant(craneRepository,notificationRepository))
-                .addService(new ReportServant(shipRepository, craneRepository))
+                .addService(new ReportServant(shipRepository, craneRepository, containerRepository))
                 .build();
         server.start();
         logger.info("Server started, listening on " + port);

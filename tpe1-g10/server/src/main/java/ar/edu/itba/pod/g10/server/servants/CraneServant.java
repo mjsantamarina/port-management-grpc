@@ -3,6 +3,7 @@ package ar.edu.itba.pod.g10.server.servants;
 import ar.edu.itba.pod.g10.server.models.Crane;
 import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.g10.server.models.Ship;
+import ar.edu.itba.pod.g10.server.repositories.ContainerRepository;
 import ar.edu.itba.pod.g10.server.repositories.CraneRepository;
 import ar.edu.itba.pod.g10.server.repositories.NotificationRepository;
 import ar.edu.itba.pod.grpc.crane.CraneServiceGrpc;
@@ -18,8 +19,10 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
 
     private final CraneRepository craneRepository;
     private final NotificationRepository notificationRepository;
+    private final ContainerRepository containerRepository;
 
-    public CraneServant(CraneRepository craneRepository, NotificationRepository notificationRepository) {
+    public CraneServant(CraneRepository craneRepository, NotificationRepository notificationRepository, ContainerRepository containerRepository) {
+        this.containerRepository = containerRepository;
         this.craneRepository = craneRepository;
         this.notificationRepository = notificationRepository;
     }
@@ -74,10 +77,11 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
                     if(unloaded != null){
                         notificationRepository.publishUnloaded(crane, unloaded);
                         ship.setUnloaded();
+                        crane.setCurrentContainers(crane.getCurrentContainers() + 1);
+                        crane.setCraneStatus(CraneStatus.CRANE_STATUS_UNLOADING);
+                        notificationRepository.publishCraneStatus(crane);
+                        containerRepository.addContainer(unloaded, dock, crane);
                     }
-                    crane.setCurrentContainers(crane.getCurrentContainers() + 1);
-                    crane.setCraneStatus(CraneStatus.CRANE_STATUS_UNLOADING);
-                    notificationRepository.publishCraneStatus(crane);
                     if(crane.needsMainteinance()){
                         crane.setCraneStatus(CraneStatus.CRANE_STATUS_MAINTENANCE);
                         notificationRepository.publishCraneStatus(crane);
