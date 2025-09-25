@@ -76,7 +76,10 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
 
                     Ship ship = dock.getShip();
                     String expected = ship.peekContainer();
-                    if (expected == null) { complete(); return; }
+                    if (expected == null) {
+                        Locks.releaseCrane(currentCraneId);
+                        responseObserver.onError(io.grpc.Status.FAILED_PRECONDITION.withDescription("No more containers to unload").asRuntimeException());
+                    }
 
                     if (crane.getStatus() == CraneStatus.CRANE_STATUS_CLOSED) { fail(io.grpc.Status.FAILED_PRECONDITION, "Crane is closed"); return; }
                     if (crane.getStatus() == CraneStatus.CRANE_STATUS_MAINTENANCE) { fail(io.grpc.Status.FAILED_PRECONDITION, "Crane is in maintenance"); return; }
@@ -135,9 +138,6 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
             }
         };
     }
-
-
-
 
 
     @Override
