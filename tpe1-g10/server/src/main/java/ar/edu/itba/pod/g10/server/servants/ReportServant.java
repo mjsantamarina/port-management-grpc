@@ -8,6 +8,7 @@ import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 
 import java.util.List;
+import java.util.SortedSet;
 
 public class ReportServant extends ReportServiceGrpc.ReportServiceImplBase {
     private final ShipRepository shipRepository;
@@ -21,10 +22,8 @@ public class ReportServant extends ReportServiceGrpc.ReportServiceImplBase {
 
     @Override
     public void pendingShips(Empty request, StreamObserver<PendingResponse> responseObserver) {
-        // Placeholder: Lista ships pendientes
-        List<Ship> pendingShips = shipRepository.getPendingShips();
+        SortedSet<Ship> pendingShips = shipRepository.getPendingShips();
         PendingResponse.Builder response = PendingResponse.newBuilder();
-        //System.out.println("Pending ships: " + pendingShips.size());
         for (Ship ship : pendingShips) {
             response.addShips(ShipInfo.newBuilder().setShipId(ship.getId()).setContainers(ship.getContainerAmount())
                     .setSize(ship.getSize()).build());

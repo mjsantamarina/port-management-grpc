@@ -73,6 +73,7 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
                     String unloaded = ship.unloadContainer();
                     if(unloaded != null){
                         notificationRepository.publishUnloaded(crane, unloaded);
+                        ship.setUnloaded();
                     }
                     crane.setCurrentContainers(crane.getCurrentContainers() + 1);
                     crane.setCraneStatus(CraneStatus.CRANE_STATUS_UNLOADING);

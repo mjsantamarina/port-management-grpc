@@ -2,10 +2,7 @@ package ar.edu.itba.pod.g10.server.repositories;
 
 import ar.edu.itba.pod.g10.server.models.Ship;
 
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
@@ -58,8 +55,8 @@ public class ShipRepository {
     }
 
 
-    public List<Ship> getPendingShips() {
-        List<Ship> pendingShips = new ArrayList<>();
+    public SortedSet<Ship> getPendingShips() {
+        SortedSet<Ship> pendingShips = new TreeSet<>();
         for (Ship ship : shipMap.values()) {
             if (!ship.getUnloaded() ) {
                 pendingShips.add(ship);
