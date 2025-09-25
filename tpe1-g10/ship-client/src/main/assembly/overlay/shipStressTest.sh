@@ -21,7 +21,7 @@ ensure_client() {
     echo "---> Unpacking ${base_name}..."
     (cd "${module}/target" && tar -xzf "${base_name}-bin.tar.gz") || exit 1
   fi
-  chmod +x "target/${base_name}/${script_name}"
+  chmod +x "${module}/target/${base_name}/${script_name}"
 }
 
 
