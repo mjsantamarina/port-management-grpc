@@ -95,16 +95,33 @@ public class DockRepository {
         }
     }
 
+    private static int rank(Size s) {
+        switch (s) {
+            case SIZE_SMALL:  return 0;
+            case SIZE_MEDIUM: return 1;
+            case SIZE_LARGE:  return 2;
+            default:          return Integer.MAX_VALUE;
+        }
+    }
+
+    private static boolean fits(Size ship, Size dock) {
+        return rank(dock) >= rank(ship);
+    }
+
     private Optional<Dock> findAvailableDock(Size shipSize) {
         return sizesOrderFor(shipSize)
                 .stream()
                 .flatMap(sz -> {
                     Deque<Dock> dq = docksBySize.get(sz);
-                    return dq == null ? Stream.empty() : dq.stream();
+                    return dq == null ? java.util.stream.Stream.<Dock>empty() : dq.stream();
                 })
                 .filter(d -> d.getStatus() == DockStatus.DOCK_STATUS_IDLE)
-                .min((a, b) -> Integer.compare(a.getNumber(), b.getNumber()));
+                .filter(d -> fits(shipSize, d.getSize()))
+                .min(java.util.Comparator
+                        .comparingInt((Dock d) -> rank(d.getSize()))
+                        .thenComparingInt(Dock::getNumber));
     }
+
 
     private java.util.List<Size> sizesOrderFor(Size shipSize) {
         return switch (shipSize) {
