@@ -6,7 +6,7 @@ import java.awt.*;
 public class ContainerData {
     private String id;
     private Crane crane;
-    private int currentContainerAmount = 0;
+    private int currentContainerAmount;
     private Dock dock;
 
     public ContainerData(String id, Crane crane, Dock dock) {
@@ -31,4 +31,7 @@ public class ContainerData {
     public Dock getDock() {
         return dock;
     }
+
+
+
 }

@@ -53,6 +53,7 @@ public class ReportServant extends ReportServiceGrpc.ReportServiceImplBase {
                                 .setDockNumber(containerData.getDock().getNumber())
                                 .setDockSize(containerData.getDock().getSize())
                                 .setMaxContainers(containerData.getCrane().getMaxContainers())
+                                .setUnloadedSinceMaintenance(containerData.getCurrentContainerAmount())
                         .build());
 
             }
@@ -66,6 +67,7 @@ public class ReportServant extends ReportServiceGrpc.ReportServiceImplBase {
                                 .setDockNumber(containerData.getDock().getNumber())
                                 .setDockSize(containerData.getDock().getSize())
                                 .setMaxContainers(containerData.getCrane().getMaxContainers())
+                                .setUnloadedSinceMaintenance(containerData.getCurrentContainerAmount())
                         .build());
 
             }

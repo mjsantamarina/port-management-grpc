@@ -38,6 +38,7 @@ public class Crane {
 
     public void setCurrentContainers(int currentContainers) {
         this.currentContainers = currentContainers;
+        System.out.println("Current containers set to: " + currentContainers);
     }
 
     public void setCraneStatus(CraneStatus craneStatus) {
