@@ -66,7 +66,7 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
         Crane crane = dock.addCrane(request.getContainerAmount(), craneRepository.getNextCraneNumber());
         craneRepository.addCrane(crane);
         responseObserver.onNext(AddCraneToDockResponse.newBuilder()
-                .setCraneNumber(crane.getId()).setLastContainerAmount(Integer.valueOf(0))
+                .setCraneNumber(crane.getId()).setLastContainerAmount(Integer.valueOf(0)).setDockSize(dock.getSize())
                 .setProvidedContainerAmount(request.getContainerAmount()).build()
         );
         responseObserver.onCompleted();

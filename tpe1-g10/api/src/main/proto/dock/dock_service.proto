@@ -39,6 +39,7 @@ message AddCraneToDockResponse {
   uint32 last_container_amount = 2;
   uint32 provided_container_amount = 3;
   DockStatusResponse status = 4;
+  utils.Size dock_size = 5;
 }
 
 message DockStatusResponse {

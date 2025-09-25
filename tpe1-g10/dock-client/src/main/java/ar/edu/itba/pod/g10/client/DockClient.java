@@ -81,7 +81,7 @@ public class DockClient {
                     .setDockNumber(dockNumber)
                     .setContainerAmount(containerAmount)
                     .build());
-            System.out.println("Added 🏗️ Crane #" + response.getCraneNumber() + " (" + response.getLastContainerAmount() + "📦) [" + response.getProvidedContainerAmount() + "] on 🛟 Dock #" + dockNumber + " (" + sizeAsString(response.getStatus().getDockSize()) + ")");
+            System.out.println("Added 🏗️ Crane #" + response.getCraneNumber() + " (" + response.getLastContainerAmount() + "📦) [" + response.getProvidedContainerAmount() + "] on 🛟 Dock #" + dockNumber + " (" + sizeAsString(response.getDockSize()) + ")");
         } catch (RuntimeException e) {
             System.out.println("Dock not found");
         }
