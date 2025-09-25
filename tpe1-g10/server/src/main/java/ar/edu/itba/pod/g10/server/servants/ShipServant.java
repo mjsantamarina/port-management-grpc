@@ -156,7 +156,7 @@ public class ShipServant extends ShipServiceGrpc.ShipServiceImplBase {
             Dock dock = dockRepository.getDockByNumber(request.getDockNumber()).orElseThrow(() -> new IllegalArgumentException("Dock not found: " + request.getDockNumber()));
             Ship ship = dock.getShip();
             if(dock.getShip()==null || !dock.getShip().equals(request.getShipId())){
-                throw new RuntimeException("Ship not " + request.getShipId() + " not in crane");
+                throw new RuntimeException("Ship not " + request.getShipId() + " not in Dock");
             }
             dockLock.lock();
             try {

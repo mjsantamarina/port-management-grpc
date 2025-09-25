@@ -1,13 +1,13 @@
 package ar.edu.itba.pod.g10.server.servants;
 
+import ar.edu.itba.pod.g10.server.models.Ship;
 import ar.edu.itba.pod.g10.server.repositories.CraneRepository;
 import ar.edu.itba.pod.g10.server.repositories.ShipRepository;
-import ar.edu.itba.pod.grpc.report.ReportServiceGrpc;
-import ar.edu.itba.pod.grpc.report.PendingResponse;
-import ar.edu.itba.pod.grpc.report.UnloadedResponse;
-import ar.edu.itba.pod.grpc.report.UnloadedRequest;
+import ar.edu.itba.pod.grpc.report.*;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
+
+import java.util.List;
 
 public class ReportServant extends ReportServiceGrpc.ReportServiceImplBase {
     private final ShipRepository shipRepository;
@@ -18,12 +18,22 @@ public class ReportServant extends ReportServiceGrpc.ReportServiceImplBase {
         this.craneRepository = craneRepository;
     }
 
+
     @Override
     public void pendingShips(Empty request, StreamObserver<PendingResponse> responseObserver) {
         // Placeholder: Lista ships pendientes
-        responseObserver.onNext(PendingResponse.newBuilder().build());
+        List<Ship> pendingShips = shipRepository.getPendingShips();
+        PendingResponse.Builder response = PendingResponse.newBuilder();
+        //System.out.println("Pending ships: " + pendingShips.size());
+        for (Ship ship : pendingShips) {
+            response.addShips(ShipInfo.newBuilder().setShipId(ship.getId()).setContainers(ship.getContainerAmount())
+                    .setSize(ship.getSize()).build());
+        }
+        responseObserver.onNext(response.build());
         responseObserver.onCompleted();
     }
+
+
 
     @Override
     public void unloadedContainers(UnloadedRequest request, StreamObserver<UnloadedResponse> responseObserver) {
