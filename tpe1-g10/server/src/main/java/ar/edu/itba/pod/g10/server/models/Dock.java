@@ -30,7 +30,8 @@ public class Dock {
     public List<Crane> getCraneList() {
         return craneList;
     }
-    public Crane addCrane(int containerCapacity, int craneNumber) {
+
+    public synchronized Crane addCrane(int containerCapacity, int craneNumber) {
         Crane crane = new Crane(craneNumber, this, containerCapacity);
         craneList.add(crane);
         return crane;
