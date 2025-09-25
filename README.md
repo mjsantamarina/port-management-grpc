@@ -544,7 +544,7 @@ chmod +x server/src/main/assembly/overlay/compile-and-run.sh && ./server/src/mai
 ```
 4. Correr el cliente que se desee testear (dock, ship, crane, watch o manifest) con:
 ```bash
-chmod +x ./src/main/assembly/overlay/<client>StressTest.sh && ./src/main/assembly/overlay/<client>StressTest.sh
+chmod +x ./<client>-client/src/main/assembly/overlay/<client>StressTest.sh && ./<client>-client/src/main/assembly/overlay/<client>StressTest.sh
 ```
 donde `<client>` es el cliente que se desea testear (dock, ship, crane, watch o manifest).
 
