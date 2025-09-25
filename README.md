@@ -220,7 +220,7 @@ IDLE 🛟 Dock #1 (S)
 ```
 o si ocupado:
 ```
-BUSY ⚓ SHIP1 (S) (3📦) in 🛟 Dock #1 (S)
+⚓ SHIP1 (S) (3📦) in 🛟 Dock #1 (S)
 ```
 
 #### Abandonar un Muelle
