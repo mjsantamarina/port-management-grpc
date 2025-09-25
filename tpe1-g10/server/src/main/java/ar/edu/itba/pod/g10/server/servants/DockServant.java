@@ -64,40 +64,34 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
 
     @Override
     public void openDock(UInt32Value request, StreamObserver<DockStatusResponse> responseObserver) {
-        final ReentrantLock repoLock = Locks.SHIP_REPOSITORY_LOCK;
-        final Condition CHANGED = Locks.CHANGED;
-
-        repoLock.lock();
         try {
             Dock dock = dockRepository.getDockByNumber(request.getValue())
                     .orElseThrow(() -> new IllegalArgumentException("Dock not found"));
 
-            if (dock.getStatus() == DockStatus.DOCK_STATUS_BUSY) {
-                responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Dock is busy").asRuntimeException());
-                return;
-            }
+            synchronized (dock) {
+                if (dock.getStatus() == DockStatus.DOCK_STATUS_BUSY) {
+                    responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Dock is busy").asRuntimeException());
+                    return;
+                }
+                if (dock.getStatus() == DockStatus.DOCK_STATUS_CLOSED) {
+                    dockRepository.openDock(dock, notificationRepository);
+                }
 
-            if (dock.getStatus() == DockStatus.DOCK_STATUS_CLOSED) {
-                dockRepository.openDock(dock, notificationRepository);
+                DockStatusResponse resp = DockStatusResponse.newBuilder()
+                        .setDockNumber(dock.getNumber())
+                        .setDockSize(dock.getSize())
+                        .setDockStatus(dock.getStatus())
+                        .build();
+                responseObserver.onNext(resp);
+                responseObserver.onCompleted();
             }
-            
-            CHANGED.signalAll();
-
-            DockStatusResponse dockStatusResponse = DockStatusResponse.newBuilder()
-                    .setDockNumber(dock.getNumber())
-                    .setDockSize(dock.getSize())
-                    .setDockStatus(dock.getStatus())
-                    .build();
-            responseObserver.onNext(dockStatusResponse);
-            responseObserver.onCompleted();
         } catch (IllegalArgumentException e) {
             responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
             responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
-        } finally {
-            repoLock.unlock();
         }
     }
+
 
 
     @Override
@@ -116,20 +110,32 @@ public class DockServant extends DockServiceGrpc.DockServiceImplBase {
 
     @Override
     public void closeDock(UInt32Value request, StreamObserver<DockStatusResponse> responseObserver) {
-        Dock dock = dockRepository.getDockByNumber(request.getValue()).orElseThrow(() -> new RuntimeException("Dock not found"));
-        if(dock.getStatus().equals(DockStatus.DOCK_STATUS_BUSY)){
-            responseObserver.onError(io.grpc.Status.PERMISSION_DENIED.withDescription("Dock is busy").asRuntimeException());
-            return;
+        try {
+            Dock dock = dockRepository.getDockByNumber(request.getValue())
+                    .orElseThrow(() -> new IllegalArgumentException("Dock not found"));
+
+            synchronized (dock) {
+                if (dock.getStatus() == DockStatus.DOCK_STATUS_BUSY) {
+                    responseObserver.onError(Status.PERMISSION_DENIED.withDescription("Dock is busy").asRuntimeException());
+                    return;
+                }
+                if (dock.getStatus() == DockStatus.DOCK_STATUS_IDLE) {
+                    dockRepository.closeDock(dock, notificationRepository);
+                }
+
+                DockStatusResponse resp = DockStatusResponse.newBuilder()
+                        .setDockNumber(dock.getNumber())
+                        .setDockSize(dock.getSize())
+                        .setDockStatus(dock.getStatus())
+                        .build();
+                responseObserver.onNext(resp);
+                responseObserver.onCompleted();
+            }
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
         }
-        if(dock.getStatus().equals(DockStatus.DOCK_STATUS_IDLE)){
-            dockRepository.closeDock(dock, notificationRepository);
-        }
-        DockStatusResponse dockStatusResponse = DockStatusResponse.newBuilder()
-                .setDockNumber(dock.getNumber())
-                .setDockSize(dock.getSize())
-                .setDockStatus(dock.getStatus())
-                .build();
-        responseObserver.onNext(dockStatusResponse);
-        responseObserver.onCompleted();
     }
+
 }

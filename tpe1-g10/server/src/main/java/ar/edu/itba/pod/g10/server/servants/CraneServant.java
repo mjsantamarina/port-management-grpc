@@ -15,8 +15,10 @@ import com.google.protobuf.UInt32Value;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
 
@@ -24,6 +26,11 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
     private final NotificationRepository notificationRepository;
     private final ContainerRepository containerRepository;
     private final ExecutorService notifier;
+    // en tu CraneServant (campos)
+    private final ConcurrentHashMap<Integer, ReentrantLock> craneLocks = new ConcurrentHashMap<>();
+    private ReentrantLock lockFor(int craneId) {
+        return craneLocks.computeIfAbsent(craneId, id -> new ReentrantLock(true));
+    }
 
     public CraneServant(CraneRepository craneRepository, NotificationRepository notificationRepository, ContainerRepository containerRepository, ExecutorService notifier) {
         this.containerRepository = containerRepository;
@@ -35,11 +42,27 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
     @Override
     public StreamObserver<UnloadContainersRequest> unloadContainers(StreamObserver<UnloadContainersResponse> responseObserver) {
         return new StreamObserver<>() {
+            private Integer currentCraneId = null;
+            private java.util.concurrent.locks.ReentrantLock lock = null;
+            private boolean acquired = false;
+
             @Override
             public void onNext(UnloadContainersRequest req) {
                 try {
-                    Crane crane = craneRepository.getCrane(req.getCraneNumber());
-                    System.out.println("crane number en server"+req.getCraneNumber());
+                    if (currentCraneId == null) {
+                        currentCraneId = req.getCraneNumber();
+                        lock = lockFor(currentCraneId);
+                        if (!lock.tryLock()) {
+                            responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is busy unloading").asRuntimeException());
+                            return;
+                        }
+                        acquired = true;
+                    } else if (req.getCraneNumber() != currentCraneId) {
+                        responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Crane number changed within stream").asRuntimeException());
+                        return;
+                    }
+
+                    Crane crane = craneRepository.getCrane(currentCraneId);
                     if (crane == null) {
                         responseObserver.onError(Status.NOT_FOUND.withDescription("Crane not found").asRuntimeException());
                         return;
@@ -53,88 +76,81 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
 
                     Ship ship = dock.getShip();
                     String expected = ship.peekContainer();
-
-
                     if (expected == null) {
+                        if (acquired) { lock.unlock(); acquired = false; }
                         responseObserver.onCompleted();
                         return;
                     }
-
-
 
                     if (crane.getStatus() == CraneStatus.CRANE_STATUS_CLOSED) {
                         responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is closed").asRuntimeException());
                         return;
                     }
-
-                    if(crane.getStatus() == CraneStatus.CRANE_STATUS_MAINTENANCE){
+                    if (crane.getStatus() == CraneStatus.CRANE_STATUS_MAINTENANCE) {
                         responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is in maintenance").asRuntimeException());
                         return;
                     }
-
                     if (!expected.equals(req.getContainerId())) {
                         responseObserver.onCompleted();
                         return;
                     }
 
-                    // descarga válida
                     String unloaded = ship.unloadContainer();
-                    if(unloaded != null){
-                        if(!crane.getCraneStatus().equals(CraneStatus.CRANE_STATUS_UNLOADING)){
+                    if (unloaded != null) {
+                        if (!crane.getCraneStatus().equals(CraneStatus.CRANE_STATUS_UNLOADING)) {
                             crane.setCraneStatus(CraneStatus.CRANE_STATUS_UNLOADING);
                             notifier.execute(() -> notificationRepository.publishCraneStatus(crane));
                         }
-                        notifier.execute(()->notificationRepository.publishUnloaded(crane, unloaded));
+                        notifier.execute(() -> notificationRepository.publishUnloaded(crane, unloaded));
                         ship.setUnloaded();
                         crane.setCurrentContainers(crane.getCurrentContainers() + 1);
                         containerRepository.addContainer(unloaded, dock, crane);
                     }
 
-                    if(crane.needsMainteinance()){
+                    if (crane.needsMainteinance()) {
                         crane.setCraneStatus(CraneStatus.CRANE_STATUS_MAINTENANCE);
-                        notifier.execute(()->notificationRepository.publishCraneStatus(crane));
+                        notifier.execute(() -> notificationRepository.publishCraneStatus(crane));
                     }
 
-                    if(ship.getContainerAmount()==0) {
-                        responseObserver.onNext(UnloadContainersResponse.newBuilder()
-                        .setContainerId(req.getContainerId())
-                                .setCraneNumber(crane.getId())
-                                .setDockNumber(dock.getNumber())
-                                .setDockSize(dock.getSize())
-                                .setUnloadedContainers(crane.getCurrentContainers())
-                                .setMaxContainers(crane.getMaxContainers())
-                                .setIsLast(dock.getShip().getContainerAmount()==0).build());
-                        responseObserver.onCompleted();
+                    boolean last = ship.getContainerAmount() == 0;
 
-                    }
-
-
-                    responseObserver.onNext(UnloadContainersResponse.newBuilder()
+                    UnloadContainersResponse resp = UnloadContainersResponse.newBuilder()
                             .setContainerId(req.getContainerId())
                             .setCraneNumber(crane.getId())
-                                    .setDockNumber(dock.getNumber())
-                                    .setDockSize(dock.getSize())
-                                    .setUnloadedContainers(crane.getCurrentContainers())
-                                    .setMaxContainers(crane.getMaxContainers())
-                                    .setIsLast(dock.getShip().getContainerAmount()==0)
-                            .build());
+                            .setDockNumber(dock.getNumber())
+                            .setDockSize(dock.getSize())
+                            .setUnloadedContainers(crane.getCurrentContainers())
+                            .setMaxContainers(crane.getMaxContainers())
+                            .setIsLast(last)
+                            .build();
+
+                    responseObserver.onNext(resp);
+
+                    if (last) {
+                        if (acquired) { lock.unlock(); acquired = false; }
+                        responseObserver.onCompleted();
+                    }
 
                 } catch (Exception e) {
+                    if (acquired) { lock.unlock(); acquired = false; }
                     responseObserver.onError(Status.INTERNAL.withDescription("Unexpected error: " + e.getMessage()).withCause(e).asRuntimeException());
                 }
             }
 
             @Override
             public void onError(Throwable t) {
+                if (acquired) { lock.unlock(); acquired = false; }
                 responseObserver.onError(t);
             }
 
             @Override
             public void onCompleted() {
+                if (acquired) { lock.unlock(); acquired = false; }
                 responseObserver.onCompleted();
             }
         };
     }
+    
 
     @Override
     public void getCraneStatus(UInt32Value request, StreamObserver<CraneStatusResponse> responseObserver) {
