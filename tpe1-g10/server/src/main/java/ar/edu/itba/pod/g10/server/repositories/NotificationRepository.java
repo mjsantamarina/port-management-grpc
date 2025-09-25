@@ -3,38 +3,44 @@ package ar.edu.itba.pod.g10.server.repositories;
 import ar.edu.itba.pod.g10.server.models.Crane;
 import ar.edu.itba.pod.g10.server.models.Dock;
 import ar.edu.itba.pod.g10.server.models.Ship;
-import ar.edu.itba.pod.grpc.utils.CraneStatus;
+import ar.edu.itba.pod.grpc.notify.EventResponse;
+import io.grpc.stub.ServerCallStreamObserver;
 
 import java.util.Collection;
 import java.util.Set;
-import java.util.concurrent.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class NotificationRepository {
 
-    private final ConcurrentHashMap<Integer, CopyOnWriteArraySet<BlockingQueue<String>>> subsByCrane =
+    private final ConcurrentHashMap<Integer, CopyOnWriteArraySet<ServerCallStreamObserver<EventResponse>>> observersByCrane =
             new ConcurrentHashMap<>();
 
-    public BlockingQueue<String> subscribeCrane(int craneId) {
-        BlockingQueue<String> q = new LinkedBlockingQueue<>();
-        subsByCrane.computeIfAbsent(craneId, k -> new CopyOnWriteArraySet<>()).add(q);
-        return q;
+    public void addObserver(int craneId, ServerCallStreamObserver<EventResponse> obs) {
+        observersByCrane.computeIfAbsent(craneId, k -> new CopyOnWriteArraySet<>()).add(obs);
     }
 
-    public void unsubscribeCrane(int craneId, BlockingQueue<String> q) {
-        Set<BlockingQueue<String>> set = subsByCrane.get(craneId);
+    public void removeObserver(int craneId, ServerCallStreamObserver<EventResponse> obs) {
+        Set<ServerCallStreamObserver<EventResponse>> set = observersByCrane.get(craneId);
         if (set != null) {
-            set.remove(q);
-            if (set.isEmpty()) subsByCrane.remove(craneId, set);
+            set.remove(obs);
+            if (set.isEmpty()) observersByCrane.remove(craneId, set);
         }
     }
 
     public void publishToCrane(int craneId, String line) {
-        Set<BlockingQueue<String>> set = subsByCrane.get(craneId);
+        Set<ServerCallStreamObserver<EventResponse>> set = observersByCrane.get(craneId);
         if (set == null || set.isEmpty()) return;
-        for (BlockingQueue<String> q : set) {
-            q.offer(line);
+        EventResponse ev = EventResponse.newBuilder().setEventMessage(line).build();
+        for (ServerCallStreamObserver<EventResponse> s : set) {
+            if (!s.isCancelled()) s.onNext(ev);
+        }
+    }
+
+    public void publishToCranes(Collection<Integer> craneIds, String line) {
+        if (craneIds == null || craneIds.isEmpty()) return;
+        for (Integer id : craneIds) {
+            if (id != null) publishToCrane(id, line);
         }
     }
 
@@ -70,23 +76,16 @@ public class NotificationRepository {
         publishToCranes(craneIds, lineShipLeft(d, s));
     }
 
-    public void publishToCranes(Collection<Integer> craneIds, String line) {
-        if (craneIds == null || craneIds.isEmpty()) return;
-        for (Integer id : craneIds) {
-            if (id != null) publishToCrane(id, line);
-        }
-    }
-
     private static String lineStartedWatch(Crane c) {
         Dock d = c.getDock();
-        return craneStatusAsString(c.getStatus()) + " 🏗️ Crane #" + c.getId() + " (" + c.getCurrentContainers() + "📦) [" +
+        return c.getStatus() + " 🏗️ Crane #" + c.getId() + " (" + c.getCurrentContainers() + "📦) [" +
                 c.getMaxContainers() + "] on 🛟 Dock #" + d.getNumber() + " (" +
                 d.getSize().name().charAt(0) + ") started watch";
     }
 
     private static String lineCraneStatus(Crane c) {
         Dock d = c.getDock();
-        return craneStatusAsString(c.getStatus()) + " 🏗️ Crane #" + c.getId() + " (" + c.getCurrentContainers() + "📦) [" +
+        return c.getStatus() + " 🏗️ Crane #" + c.getId() + " (" + c.getCurrentContainers() + "📦) [" +
                 c.getMaxContainers() + "] on 🛟 Dock #" + d.getNumber() + " (" +
                 d.getSize().name().charAt(0) + ")";
     }
@@ -119,12 +118,5 @@ public class NotificationRepository {
     private static String lineShipLeft(Dock d, Ship s) {
         return "⚓ " + s.getId() + " (" + s.getSize().name().charAt(0) + ") (" + s.getContainerAmount() +
                 "📦) left 🛟 Dock #" + d.getNumber() + " (" + d.getSize().name().charAt(0) + ")";
-    }
-
-    private static String craneStatusAsString(CraneStatus status) {
-        if (status == CraneStatus.CRANE_STATUS_UNLOADING) return "UNLOADING";
-        if (status == CraneStatus.CRANE_STATUS_CLOSED) return "CLOSED";
-        if (status == CraneStatus.CRANE_STATUS_OPEN) return "OPEN";
-        return "";
     }
 }
