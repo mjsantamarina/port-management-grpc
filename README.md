@@ -533,15 +533,20 @@ cd dock-client/target/tpe1-g10-dock-client-2025.2Q/
 # Salida: OPEN 🛟 Dock #1 (L)
 ```
 
-## Otros Clientes
-
-Patrones similares se aplican a otros clientes en el proyecto:
-- **Cliente de Grúas:** `crane-client/target/tpe1-g10-crane-client-2025.2Q/crane.sh`
-- **Cliente de Barcos:** `ship-client/target/tpe1-g10-ship-client-2025.2Q/ship.sh`
-- **Cliente de Observación:** `watch-client/target/tpe1-g10-watch-client-2025.2Q/watch.sh`
-- **Cliente de Manifiestos:** `manifest-client/target/tpe1-g10-manifest-client-2025.2Q/manifest.sh`
-
-Cada cliente tiene su propio conjunto de operaciones y parámetros. Ejecuta cada script sin parámetros para ver información de uso.
+## Pruebas Realizadas
+**Stress Tests:**
+Para correr los stress test individuales:
+1. Navegar a tpe1-g10. Desde la raíz del proyecto correr: `cd tpe1-g10`
+2. Parado tpe1-g10 compilar con mvn: `mvn clean install`
+3. Correr el servidor con: 
+```bash
+chmod +x server/src/main/assembly/overlay/compile-and-run.sh && ./server/src/main/assembly/overlay/compile-and-run.sh
+```
+4. Correr el cliente que se desee testear (dock, ship, crane, watch o manifest) con:
+```bash
+chmod +x ./src/main/assembly/overlay/<client>StressTest.sh && ./src/main/assembly/overlay/<client>StressTest.sh
+```
+donde `<client>` es el cliente que se desea testear (dock, ship, crane, watch o manifest).
 
 ## Correcciones y Mejoras Implementadas
 
