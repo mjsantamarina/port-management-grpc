@@ -33,6 +33,7 @@ public class ShipRepository {
     }
 
 
+
     public Ship getShip(String id) {
         return shipMap.get(id);
     }
@@ -57,7 +58,13 @@ public class ShipRepository {
     }
 
 
-
-
-
+    public List<Ship> getPendingShips() {
+        List<Ship> pendingShips = new ArrayList<>();
+        for (Ship ship : shipMap.values()) {
+            if (!ship.getUnloaded() ) {
+                pendingShips.add(ship);
+            }
+        }
+        return pendingShips;
+    }
 }

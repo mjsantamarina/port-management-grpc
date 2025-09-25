@@ -22,12 +22,12 @@ message PendingResponse {
 message ShipInfo {
   string ship_id = 1;
   utils.Size size = 2;
-  repeated string containers = 3; // Para contar contenedores
+  uint32 containers = 3; // Para contar contenedores
 }
 
 message UnloadedRequest {
-  google.protobuf.UInt32Value crane = 1; // Filtro opcional
-  google.protobuf.UInt32Value dock = 2; // Filtro opcional
+  int32 crane = 1; // Filtro opcional
+  int32 dock = 2; // Filtro opcional
 }
 
 message UnloadedResponse {

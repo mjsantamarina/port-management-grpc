@@ -66,6 +66,7 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
 
                     // descarga válida
                     ship.unloadContainer();
+                    ship.setUnloaded();
 
                     crane.setCurrentContainers(crane.getCurrentContainers() + 1);
                     crane.setCraneStatus(CraneStatus.CRANE_STATUS_UNLOADING);

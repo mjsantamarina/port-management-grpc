@@ -1,5 +1,6 @@
 package ar.edu.itba.pod.g10.client;
 
+
 import ar.edu.itba.pod.grpc.report.*;
 import ar.edu.itba.pod.grpc.utils.Size;
 import com.google.protobuf.Empty;
@@ -20,10 +21,10 @@ import java.util.stream.Collectors;
 
 public class ManifestClient {
     private static Logger logger = LoggerFactory.getLogger(ManifestClient.class);
-    private final ReportServiceGrpc.ReportServiceBlockingStub reportService;
+    private final ar.edu.itba.pod.grpc.report.ReportServiceGrpc.ReportServiceBlockingStub reportService;
 
     public ManifestClient(ManagedChannel channel) {
-        this.reportService = ReportServiceGrpc.newBlockingStub(channel);
+        this.reportService = ar.edu.itba.pod.grpc.report.ReportServiceGrpc.newBlockingStub(channel);
     }
 
     public static void main(String[] args) {
@@ -80,7 +81,7 @@ public class ManifestClient {
             return; // No crea file
         }
         List<String> lines = ships.stream()
-                .map(ship -> "⚓ " + ship.getShipId() + " (" + sizeAsString(ship.getSize()) + ") (" + ship.getContainersList().size() + "📦)")
+                .map(ship -> "⚓ " + ship.getShipId() + " (" + sizeAsString(ship.getSize()) + ") (" + ship.getContainers()+ "📦)")
                 .collect(Collectors.toList());
         try {
             Files.write(Paths.get(outPath), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -90,22 +91,22 @@ public class ManifestClient {
     }
 
     private void handleContainers(String outPath, Optional<Integer> crane, Optional<Integer> dock) {
-        UnloadedRequest.Builder builder = UnloadedRequest.newBuilder();
-        crane.ifPresent(c -> builder.setCrane(UInt32Value.of(c)));
-        dock.ifPresent(d -> builder.setDock(UInt32Value.of(d)));
-        UnloadedResponse response = reportService.unloadedContainers(builder.build());
-        List<UnloadInfo> unloads = response.getUnloadsList();
-        if (unloads.isEmpty()) {
-            return; // No crea file
-        }
-        List<String> lines = unloads.stream()
-                .map(unload -> "📦 " + unload.getContainerId() + " unloaded from 🏗️ Crane #" + unload.getCraneNumber() + " (" + unload.getUnloadedSinceMaintenance() + "📦) [" + unload.getMaxContainers() + "] on 🛟 Dock #" + unload.getDockNumber() + " (" + sizeAsString(unload.getDockSize()) + ")")
-                .collect(Collectors.toList());
-        try {
-            Files.write(Paths.get(outPath), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException e) {
-            System.err.println("Error writing file: " + e.getMessage());
-        }
+//        UnloadedRequest.Builder builder = UnloadedRequest.newBuilder();
+//        crane.ifPresent(c -> builder.setCrane(c));
+//        dock.ifPresent(d -> builder.setDock(d));
+//        UnloadedResponse response = reportService.unloadedContainers(builder.build());
+//        List<UnloadInfo> unloads = response.getUnloadsList();
+//        if (unloads.isEmpty()) {
+//            return; // No crea file
+//        }
+//        List<String> lines = unloads.stream()
+//                .map(unload -> "📦 " + unload.getContainerId() + " unloaded from 🏗️ Crane #" + unload.getCraneNumber() + " (" + unload.getUnloadedSinceMaintenance() + "📦) [" + unload.getMaxContainers() + "] on 🛟 Dock #" + unload.getDockNumber() + " (" + sizeAsString(unload.getDockSize()) + ")")
+//                .collect(Collectors.toList());
+//        try {
+//            Files.write(Paths.get(outPath), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+//        } catch (IOException e) {
+//            System.err.println("Error writing file: " + e.getMessage());
+//        }
     }
 
     private String sizeAsString(Size size) {
