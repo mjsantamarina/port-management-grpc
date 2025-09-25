@@ -85,9 +85,6 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
                     if(crane.needsMainteinance()){
                         crane.setCraneStatus(CraneStatus.CRANE_STATUS_MAINTENANCE);
                         notificationRepository.publishCraneStatus(crane);
-                        responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is in maintenance").asRuntimeException());
-                        return;
-                        //TODO ver si hay que terminar la ejecucion o como es.
                     }
 
                     if(ship.getContainerAmount()==0) {
@@ -101,6 +98,12 @@ public class CraneServant extends CraneServiceGrpc.CraneServiceImplBase {
                                 .setIsLast(dock.getShip().getContainerAmount()==0).build());
                         responseObserver.onCompleted();
 
+                    }
+
+                    if(crane.needsMainteinance()){
+                        crane.setCraneStatus(CraneStatus.CRANE_STATUS_MAINTENANCE);
+                        notificationRepository.publishCraneStatus(crane);
+                        responseObserver.onError(Status.FAILED_PRECONDITION.withDescription("Crane is in maintenance").asRuntimeException());
                         return;
                     }
 
