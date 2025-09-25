@@ -7,6 +7,7 @@ import ar.edu.itba.pod.g10.server.repositories.NotificationRepository;
 import ar.edu.itba.pod.grpc.notify.EventResponse;
 import ar.edu.itba.pod.grpc.notify.NotifyServiceGrpc;
 import ar.edu.itba.pod.grpc.notify.WatchCraneRequest;
+import ar.edu.itba.pod.grpc.utils.CraneStatus;
 import com.google.protobuf.Empty;
 import com.google.protobuf.UInt32Value;
 import io.grpc.stub.ServerCallStreamObserver;
@@ -41,7 +42,7 @@ public class NotifyServant extends NotifyServiceGrpc.NotifyServiceImplBase {
 
     private static String startedWatchLine(Crane c) {
         Dock d = c.getDock();
-        return c.getStatus() + " 🏗️ Crane #" + c.getId() + " (" + c.getCurrentContainers() + "📦) [" +
+        return statusToString(c.getStatus()) + " 🏗️ Crane #" + c.getId() + " (" + c.getCurrentContainers() + "📦) [" +
                 c.getMaxContainers() + "] on 🛟 Dock #" + d.getNumber() + " (" +
                 d.getSize().name().charAt(0) + ") started watch";
     }
@@ -63,4 +64,17 @@ public class NotifyServant extends NotifyServiceGrpc.NotifyServiceImplBase {
         responseObserver.onNext(Empty.getDefaultInstance());
         responseObserver.onCompleted();
     }
+
+
+    private static String statusToString(CraneStatus status) {
+        return switch (status) {
+            case CRANE_STATUS_OPEN ->  "OPEN";
+            case CRANE_STATUS_CLOSED -> "CLOSED";
+            case CRANE_STATUS_MAINTENANCE ->  "MAINTENANCE";
+            case CRANE_STATUS_UNLOADING ->   "UNLOADING";
+            case UNRECOGNIZED ->  "UNKNOWN";
+            case CRANE_STATUS_UNSPECIFIED ->    "UNSPECIFIED";
+        };
+    }
+
 }
