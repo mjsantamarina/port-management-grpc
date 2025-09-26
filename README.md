@@ -95,8 +95,6 @@ Added 🛟 Dock #1 (S)
 ```
 
 #### Agregar una Grúa a un Muelle
-TODO: Agregar una grúa a un dock que no existe rompe el server
-
 Agrega una grúa con capacidad de contenedores especificada a un muelle existente.
 
 ```bash
