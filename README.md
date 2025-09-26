@@ -399,17 +399,17 @@ OPEN 🏗️ Crane #1 (0📦) [15] on 🛟 Dock #1 (S)
 Anula el registro de notificaciones para una grúa.
 
 ```bash
-./watch.sh -DserverAddress=localhost:50051 -Daction=stopWatch -Dcrane=<NÚMERO_GRÚA>
+./watch.sh -DserverAddress=localhost:50051 -Daction=stop -Dcrane=<NÚMERO_GRÚA>
 ```
 
 <u>Parámetros:</u>
 - `serverAddress`: Dirección del servidor y puerto (ej., `localhost:50051`)
-- `action`: Debe ser `stopWatch`
+- `action`: Debe ser `stop`
 - `crane`: Número de la grúa
 
 <u>Ejemplo:</u>
 ```bash
-./watch.sh -DserverAddress=localhost:50051 -Daction=stopWatch -Dcrane=1
+./watch.sh -DserverAddress=localhost:50051 -Daction=stop -Dcrane=1
 ```
 
 <u>Salida Esperada:</u>
@@ -534,18 +534,20 @@ cd dock-client/target/tpe1-g10-dock-client-2025.2Q/
 ## Pruebas Realizadas
 **Stress Tests:**
 Para correr los stress test individuales:
-1. Navegar a tpe1-g10. Desde la raíz del proyecto correr: `cd tpe1-g10`
+1. En una shell bash navegar a tpe1-g10. Desde la raíz del proyecto correr: `cd tpe1-g10`
 2. Parado tpe1-g10 compilar con mvn: `mvn clean install`
 3. Correr el servidor con: 
-```bash
-chmod +x server/src/main/assembly/overlay/compile-and-run.sh && ./server/src/main/assembly/overlay/compile-and-run.sh
-```
-4. Correr el cliente que se desee testear (dock, ship, crane, watch o manifest) con:
-```bash
-chmod +x ./<client>-client/src/main/assembly/overlay/<client>StressTest.sh && ./<client>-client/src/main/assembly/overlay/<client>StressTest.sh
-```
-donde `<client>` es el cliente que se desea testear (dock, ship, crane, watch o manifest).
+    ```bash
+    chmod +x server/src/main/assembly/overlay/compile-and-run.sh && ./server/src/main/assembly/overlay/compile-and-run.sh
+    ```
+4. En otra shell bash, navegar a tpe1-g10 y correr el cliente que se desee testear (dock, ship, crane, watch o manifest) con:
+    ```bash
+    chmod +x ./<client>-client/src/main/assembly/overlay/<client>StressTest.sh && ./<client>-client/src/main/assembly/overlay/<client>StressTest.sh
+    ```
+    donde `<client>` es el cliente que se desea testear (dock, ship, crane, watch o manifest).
 
+**Importante:** Los stress test fueron pensados para correr con un servidor limpio. Luego de cada stress test, se debe reiniciar el servidor para evitar inconsistencias.
+Terminar la ejecución en la terminal que se esté corriendo el servidor con `ctrl + c` y volver a correr el servidor con el comando `chmod +x server/src/main/assembly/overlay/compile-and-run.sh && ./server/src/main/assembly/overlay/compile-and-run.sh` antes mencionado.
 ## Correcciones y Mejoras Implementadas
 
 ### 🐛 Bugs Corregidos
