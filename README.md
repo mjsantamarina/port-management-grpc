@@ -580,6 +580,6 @@ Terminar la ejecución en la terminal que se esté corriendo el servidor con `ct
 
 ## Requisitos
 
-- Java 24
+- Java 24 (SDK)
 - Maven 3.6
 - Compilador de Protocol Buffers (manejado por el plugin de Maven)
